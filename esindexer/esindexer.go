@@ -26,6 +26,7 @@ type EsIndexer struct {
 	log             *log.Logger
 	reindexing      bool
 	esURL           string
+	stream          types.AergoRPCService_ListBlockStreamClient
 }
 
 // NewEsIndexer createws new EsIndexer instance
@@ -160,25 +161,48 @@ func (ns *EsIndexer) Start(grpcClient types.AergoRPCServiceClient, reindex bool)
 	ns.UpdateLastBlockHeightFromDb()
 	ns.log.Info().Uint64("lastBlockHeight", ns.lastBlockHeight).Msg("Started Elasticsearch Indexer")
 
-	// Get new blocks from stream as they come in
-	stream, err := grpcClient.ListBlockStream(context.Background(), &types.Empty{})
+	return ns.StartStream()
+}
+
+// StartStream starts the block stream and calls SyncBlock
+func (ns *EsIndexer) StartStream() error {
+	var err error
+	ns.stream, err = ns.grpcClient.ListBlockStream(context.Background(), &types.Empty{})
 	if err != nil {
 		return err
 	}
 	go func() {
 		for {
-			block, err := stream.Recv()
+			block, err := ns.stream.Recv()
 			if err == io.EOF {
+				ns.log.Warn().Msg("Stream ended")
+				ns.RestartStream()
 				return
 			}
 			if err != nil {
 				ns.log.Warn().Err(err).Msg("Failed to receive a block")
+				ns.RestartStream()
 				return
 			}
 			ns.SyncBlock(block)
 		}
 	}()
 	return nil
+}
+
+// RestartStream restarts the streem after a few seconds and keeps trying to start
+func (ns *EsIndexer) RestartStream() {
+	if ns.stream != nil {
+		ns.stream.CloseSend()
+		ns.stream = nil
+	}
+	ns.log.Info().Msg("Restarting stream in 5 seconds")
+	time.Sleep(5 * time.Second)
+	err := ns.StartStream()
+	if err != nil {
+		ns.log.Error().Err(err).Msg("Failed to restart stream")
+		ns.RestartStream()
+	}
 }
 
 // Stop stops the indexer
@@ -215,6 +239,7 @@ func (ns *EsIndexer) SyncBlock(block *types.Block) {
 // DeleteBlocksInRange deletes previously synced blocks in the range of [fromBlockheight, toBlockHeight]
 func (ns *EsIndexer) DeleteBlocksInRange(fromBlockHeight uint64, toBlockHeight uint64) {
 	ctx := context.Background()
+	ns.log.Info().Msg(fmt.Sprintf("Rolling back %d blocks [%d..%d]", (1 + toBlockHeight - fromBlockHeight), fromBlockHeight, toBlockHeight))
 	query := elastic.NewRangeQuery("no").From(fromBlockHeight).To(toBlockHeight)
 	res, err := ns.client.DeleteByQuery().Index(ns.indexNamePrefix + "block").Query(query).Do(ctx)
 	if err != nil {
