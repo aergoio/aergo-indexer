@@ -143,7 +143,7 @@ func (ns *EsIndexer) Start(grpcClient types.AergoRPCServiceClient, reindex bool)
 	if !strings.HasPrefix(url, "http") {
 		url = fmt.Sprintf("http://%s", url)
 	}
-	client, err := elastic.NewClient(elastic.SetURL(url))
+	client, err := elastic.NewClient(elastic.SetURL(url), elastic.SetHealthcheckTimeoutStartup(15*time.Second))
 	if err != nil {
 		return err
 	}

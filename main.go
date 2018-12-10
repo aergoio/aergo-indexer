@@ -37,11 +37,11 @@ var (
 func init() {
 	fs := rootCmd.PersistentFlags()
 	fs.BoolVar(&reindexingMode, "reindex", false, "reindex blocks from genesis and swap index after catching up")
-	fs.StringVarP(&host, "host", "H", "localhost", "Host address of aergo server")
-	fs.Int32VarP(&port, "port", "p", 7845, "Port number of aergo server")
-	fs.StringVarP(&aergoAddress, "aergo", "A", "", "Host and port of aergo server. Alternative to setting host and port separately.")
+	fs.StringVarP(&host, "host", "H", "localhost", "host address of aergo server")
+	fs.Int32VarP(&port, "port", "p", 7845, "port number of aergo server")
+	fs.StringVarP(&aergoAddress, "aergo", "A", "", "host and port of aergo server. Alternative to setting host and port separately.")
 	fs.StringVarP(&esURL, "esurl", "E", "http://127.0.0.1:9200", "URL of elasticsearch server")
-	fs.StringVarP(&indexNamePrefix, "prefix", "X", "chain_", "Prefix used for index names")
+	fs.StringVarP(&indexNamePrefix, "prefix", "X", "chain_", "prefix used for index names")
 }
 
 func main() {

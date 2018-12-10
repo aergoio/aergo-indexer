@@ -95,6 +95,9 @@ var mappings = map[string]string{
 					},
 					"no": {
 						"type": "long"
+					},
+					"txs": {
+						"type": "long"
 					}
 				}
 			}
