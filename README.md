@@ -11,6 +11,8 @@ This creates the indices `blockchain_block` and `blockchain_tx`. These are actua
 
 You can use the ``--prefix` parameter and multiple instances of this program to sync several blockchains with one database.
 
+Instead of setting host and port of the aergo separtely, you can also pass them at once with `-A localhost:7845`.
+
 To reindex (starting from scratch):
 
     ./bin/esindexer --reindex

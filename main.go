@@ -26,6 +26,7 @@ var (
 	port            int32
 	esURL           string
 	indexNamePrefix string
+	aergoAddress    string
 
 	logger *log.Logger
 
@@ -38,6 +39,7 @@ func init() {
 	fs.BoolVar(&reindexingMode, "reindex", false, "reindex blocks from genesis and swap index after catching up")
 	fs.StringVarP(&host, "host", "H", "localhost", "Host address of aergo server")
 	fs.Int32VarP(&port, "port", "p", 7845, "Port number of aergo server")
+	fs.StringVarP(&aergoAddress, "aergo", "A", "", "Host and port of aergo server. Alternative to setting host and port separately.")
 	fs.StringVarP(&esURL, "esurl", "E", "http://127.0.0.1:9200", "URL of elasticsearch server")
 	fs.StringVarP(&indexNamePrefix, "prefix", "X", "chain_", "Prefix used for index names")
 }
@@ -71,6 +73,9 @@ func rootRun(cmd *cobra.Command, args []string) {
 }
 
 func getServerAddress() string {
+	if len(aergoAddress) > 0 {
+		return aergoAddress
+	}
 	return fmt.Sprintf("%s:%d", host, port)
 }
 

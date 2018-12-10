@@ -24,6 +24,7 @@ type EsBlock struct {
 	*BaseEsType
 	Timestamp time.Time `json:"ts"`
 	BlockNo   uint64    `json:"no"`
+	TxCount   uint      `json:"txs"`
 }
 
 // EsTx is a transaction stored in elasticsearch
@@ -35,14 +36,17 @@ type EsTx struct {
 	Recipient string    `json:"to"`
 }
 
+// ConvBlock converts Block from RPC into Elasticsearch type
 func ConvBlock(block *types.Block) EsBlock {
 	return EsBlock{
 		BaseEsType: &BaseEsType{base58.Encode(block.Hash)},
 		Timestamp:  time.Unix(0, block.Header.Timestamp),
 		BlockNo:    block.Header.BlockNo,
+		TxCount:    uint(len(block.Body.Txs)),
 	}
 }
 
+// ConvTx converts Tx from RPC into Elasticsearch type
 func ConvTx(tx *types.Tx) EsTx {
 	account := ""
 	if tx.Body.Account != nil {
