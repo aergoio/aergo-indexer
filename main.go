@@ -83,7 +83,7 @@ func waitForClient(serverAddr string) types.AergoRPCServiceClient {
 	var conn *grpc.ClientConn
 	var err error
 	for {
-		conn, err = grpc.Dial(serverAddr, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(3*time.Second))
+		conn, err = grpc.Dial(serverAddr, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(5*time.Second))
 		if err == nil && conn != nil {
 			break
 		}

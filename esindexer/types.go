@@ -1,6 +1,7 @@
 package esindexer
 
 import (
+	"math/big"
 	"time"
 
 	"github.com/aergoio/aergo-esindexer/types"
@@ -34,6 +35,7 @@ type EsTx struct {
 	BlockNo   uint64    `json:"blockno"`
 	Account   string    `json:"from"`
 	Recipient string    `json:"to"`
+	Amount    string    `json:"amount"` // string of BigInt
 }
 
 // ConvBlock converts Block from RPC into Elasticsearch type
@@ -56,10 +58,12 @@ func ConvTx(tx *types.Tx) EsTx {
 	if tx.Body.Recipient != nil {
 		recipient = types.EncodeAddress(tx.Body.Recipient)
 	}
+	amount := big.NewInt(0).SetBytes(tx.GetBody().Amount).String()
 	doc := EsTx{
 		BaseEsType: &BaseEsType{base58.Encode(tx.Hash)},
 		Account:    account,
 		Recipient:  recipient,
+		Amount:     amount,
 	}
 	return doc
 }
@@ -80,6 +84,9 @@ var mappings = map[string]string{
 						"type": "keyword"
 					},
 					"to": {
+						"type": "keyword"
+					},
+					"amount": {
 						"type": "keyword"
 					}
 				}
