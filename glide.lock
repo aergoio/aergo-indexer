@@ -1,16 +1,6 @@
 hash: dccd3bb98da9c9b2c73e2f6baf30f5bd4e1dfd9504422d8f606294d618465c80
 updated: 2018-12-10T11:46:21.16173+09:00
 imports:
-- name: github.com/aergoio/aergo
-  version: fa0d89f1679833daad655abf2396527b6e42397a
-  subpackages:
-  - consensus
-  - internal/common
-  - internal/enc
-  - internal/merkle
-  - pkg/trie
-  - state
-  - types
 - name: github.com/aergoio/aergo-lib
   version: 5ddbd01605af54296ffa23090505cf16b28566a4
   subpackages:
