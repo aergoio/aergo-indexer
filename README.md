@@ -7,11 +7,11 @@ This creates the indices `blockchain_block` and `blockchain_tx`. These are actua
 ## Usage
 
     make all
-    ./build/esindexer -H localhost -p 7845 --esurl http://localhost:9200
+    ./bin/esindexer -H localhost -p 7845 --esurl http://localhost:9200
 
 To reindex (starting from scratch):
 
-    ./build/esindexer --reindex
+    ./bin/esindexer --reindex
 
 When reindexing, this creates a new index to sync the blockchain from scratch.
 After catching up the first time, the aliases are replaced with the new data and the old indices removed.
