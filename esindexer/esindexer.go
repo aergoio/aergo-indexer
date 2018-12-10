@@ -236,18 +236,6 @@ func (ns *EsIndexer) SyncBlock(block *types.Block) {
 	go ns.IndexBlock(block)
 }
 
-// DeleteBlocksInRange deletes previously synced blocks in the range of [fromBlockheight, toBlockHeight]
-func (ns *EsIndexer) DeleteBlocksInRange(fromBlockHeight uint64, toBlockHeight uint64) {
-	ctx := context.Background()
-	ns.log.Info().Msg(fmt.Sprintf("Rolling back %d blocks [%d..%d]", (1 + toBlockHeight - fromBlockHeight), fromBlockHeight, toBlockHeight))
-	query := elastic.NewRangeQuery("no").From(fromBlockHeight).To(toBlockHeight)
-	res, err := ns.client.DeleteByQuery().Index(ns.indexNamePrefix + "block").Query(query).Do(ctx)
-	if err != nil {
-		ns.log.Warn().Err(err).Msg("Failed to delete blocks")
-	}
-	ns.log.Info().Int64("deleted", res.Deleted).Msg("Deleted blocks")
-}
-
 // GetBestBlockFromDb retrieves the current best block from the db
 func (ns *EsIndexer) GetBestBlockFromDb() (EsBlock, error) {
 	block := new(EsBlock)
@@ -349,4 +337,24 @@ func (ns *EsIndexer) IndexTxs(block *types.Block, txs []*types.Tx, chunkSize int
 		return nil
 	}
 	BulkIndexer(ctx, ns.log, ns.client, channel, generator, ns.indexNamePrefix+"tx", "tx", 5000)
+}
+
+// DeleteBlocksInRange deletes previously synced blocks and their txs in the range of [fromBlockheight, toBlockHeight]
+func (ns *EsIndexer) DeleteBlocksInRange(fromBlockHeight uint64, toBlockHeight uint64) {
+	ctx := context.Background()
+	ns.log.Info().Msg(fmt.Sprintf("Rolling back %d blocks [%d..%d]", (1 + toBlockHeight - fromBlockHeight), fromBlockHeight, toBlockHeight))
+	// Delete blocks
+	query := elastic.NewRangeQuery("no").From(fromBlockHeight).To(toBlockHeight)
+	res, err := ns.client.DeleteByQuery().Index(ns.indexNamePrefix + "block").Query(query).Do(ctx)
+	if err != nil {
+		ns.log.Warn().Err(err).Msg("Failed to delete blocks")
+	}
+	ns.log.Info().Int64("deleted", res.Deleted).Msg("Deleted blocks")
+	// Delete tx of blocks
+	query = elastic.NewRangeQuery("blockno").From(fromBlockHeight).To(toBlockHeight)
+	res, err = ns.client.DeleteByQuery().Index(ns.indexNamePrefix + "tx").Query(query).Do(ctx)
+	if err != nil {
+		ns.log.Warn().Err(err).Msg("Failed to delete tx")
+	}
+	ns.log.Info().Int64("deleted", res.Deleted).Msg("Deleted tx")
 }
