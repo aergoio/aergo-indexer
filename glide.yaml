@@ -1,0 +1,12 @@
+package: github.com/aergoio/aergo-esindexer
+homepage: https://github.com/aergoio/aergo-esindexer
+license: MIT
+import:
+- package: github.com/olivere/elastic
+  version: ~6.2.13
+- package: golang.org/x/sync
+  subpackages:
+  - errgroup
+- package: github.com/spf13/cobra
+  version: ~0.0.3
+- package: github.com/aergoio/aergo-lib
