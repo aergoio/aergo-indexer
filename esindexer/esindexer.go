@@ -29,18 +29,22 @@ type EsIndexer struct {
 }
 
 // NewEsIndexer createws new EsIndexer instance
-func NewEsIndexer(logger *log.Logger, esURL string) *EsIndexer {
-	aliasNamePrefix := "blockchain_"
+func NewEsIndexer(logger *log.Logger, esURL string, namePrefix string) *EsIndexer {
+	aliasNamePrefix := namePrefix
 	svc := &EsIndexer{
 		esURL:           esURL,
 		aliasNamePrefix: aliasNamePrefix,
-		indexNamePrefix: fmt.Sprintf("%s%s_", aliasNamePrefix, time.Now().UTC().Format("2006-01-02t15:04:05z")),
+		indexNamePrefix: generateIndexPrefix(aliasNamePrefix),
 		lastBlockHeight: 0,
 		lastBlockHash:   "",
 		log:             logger,
 		reindexing:      false,
 	}
 	return svc
+}
+
+func generateIndexPrefix(aliasNamePrefix string) string {
+	return fmt.Sprintf("%s%s_", aliasNamePrefix, time.Now().UTC().Format("2006-01-02t15:04:05z"))
 }
 
 // CreateIndexIfNotExists creates the indices and aliases in ES

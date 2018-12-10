@@ -7,7 +7,9 @@ This creates the indices `blockchain_block` and `blockchain_tx`. These are actua
 ## Usage
 
     make all
-    ./bin/esindexer -H localhost -p 7845 --esurl http://localhost:9200
+    ./bin/esindexer -H localhost -p 7845 --esurl http://localhost:9200 --prefix chain_
+
+You can use the ``--prefix` parameter and multiple instances of this program to sync several blockchains with one database.
 
 To reindex (starting from scratch):
 

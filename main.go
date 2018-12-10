@@ -21,10 +21,11 @@ var (
 		Long:  "Aergo Metadata Indexer for Elasticsearch",
 		Run:   rootRun,
 	}
-	reindexingMode bool
-	host           string
-	port           int32
-	esURL          string
+	reindexingMode  bool
+	host            string
+	port            int32
+	esURL           string
+	indexNamePrefix string
 
 	logger *log.Logger
 
@@ -38,6 +39,7 @@ func init() {
 	fs.StringVarP(&host, "host", "H", "localhost", "Host address of aergo server")
 	fs.Int32VarP(&port, "port", "p", 7845, "Port number of aergo server")
 	fs.StringVarP(&esURL, "esurl", "E", "http://127.0.0.1:9200", "URL of elasticsearch server")
+	fs.StringVarP(&indexNamePrefix, "prefix", "X", "chain_", "Prefix used for index names")
 }
 
 func main() {
@@ -50,7 +52,7 @@ func rootRun(cmd *cobra.Command, args []string) {
 	logger = log.NewLogger("esindexer")
 	logger.Info().Msg("Starting")
 
-	indexer = esindexer.NewEsIndexer(logger, esURL)
+	indexer = esindexer.NewEsIndexer(logger, esURL, indexNamePrefix)
 	client = waitForClient(getServerAddress())
 
 	err := indexer.Start(client, reindexingMode)
