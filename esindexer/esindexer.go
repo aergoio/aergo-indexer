@@ -16,6 +16,7 @@ import (
 	"github.com/olivere/elastic"
 )
 
+// EsIndexer hold all state information
 type EsIndexer struct {
 	client          *elastic.Client
 	grpcClient      types.AergoRPCServiceClient
@@ -280,8 +281,7 @@ func (ns *EsIndexer) IndexBlock(block *types.Block) {
 	ns.log.Info().Uint64("blockNo", block.Header.BlockNo).Str("blockHash", put.Id).Msg("Indexed block")
 
 	if len(block.Body.Txs) > 0 {
-		chunkSize := 5000
-		ns.IndexTxs(block, block.Body.Txs, chunkSize)
+		ns.IndexTxs(block, block.Body.Txs)
 	}
 }
 
@@ -301,8 +301,7 @@ func (ns *EsIndexer) IndexBlocksInRange(fromBlockHeight uint64, toBlockHeight ui
 				continue
 			}
 			if len(block.Body.Txs) > 0 {
-				chunkSize := 5000
-				ns.IndexTxs(block, block.Body.Txs, chunkSize)
+				ns.IndexTxs(block, block.Body.Txs)
 			}
 			d := ConvBlock(block)
 			select {
@@ -313,12 +312,13 @@ func (ns *EsIndexer) IndexBlocksInRange(fromBlockHeight uint64, toBlockHeight ui
 		}
 		return nil
 	}
-	BulkIndexer(ctx, ns.log, ns.client, channel, generator, ns.indexNamePrefix+"block", "block", 5000)
+	chunkSize := 5000
+	BulkIndexer(ctx, ns.log, ns.client, channel, generator, ns.indexNamePrefix+"block", "block", chunkSize)
 	ns.OnSyncComplete()
 }
 
 // IndexTxs indexes a list of transactions in bulk
-func (ns *EsIndexer) IndexTxs(block *types.Block, txs []*types.Tx, chunkSize int) {
+func (ns *EsIndexer) IndexTxs(block *types.Block, txs []*types.Tx) {
 	ctx := context.Background()
 	channel := make(chan EsType)
 	blockTs := time.Unix(0, block.Header.Timestamp)
@@ -336,7 +336,8 @@ func (ns *EsIndexer) IndexTxs(block *types.Block, txs []*types.Tx, chunkSize int
 		}
 		return nil
 	}
-	BulkIndexer(ctx, ns.log, ns.client, channel, generator, ns.indexNamePrefix+"tx", "tx", 5000)
+	chunkSize := 5000
+	BulkIndexer(ctx, ns.log, ns.client, channel, generator, ns.indexNamePrefix+"tx", "tx", chunkSize)
 }
 
 // DeleteBlocksInRange deletes previously synced blocks and their txs in the range of [fromBlockheight, toBlockHeight]

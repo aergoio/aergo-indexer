@@ -8,14 +8,17 @@ import (
 	"github.com/mr-tron/base58/base58"
 )
 
+// EsType is an interface for structs to be used as ES documents
 type EsType interface {
 	GetID() string
 }
 
+// BaseEsType implements EsType and contains the document's id
 type BaseEsType struct {
 	id string
 }
 
+// GetID returns the document's id
 func (m BaseEsType) GetID() string {
 	return m.id
 }
