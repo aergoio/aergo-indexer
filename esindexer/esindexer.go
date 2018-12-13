@@ -2,11 +2,13 @@ package esindexer
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"strings"
 	"time"
 
@@ -145,7 +147,16 @@ func (ns *EsIndexer) Start(grpcClient types.AergoRPCServiceClient, reindex bool)
 	if !strings.HasPrefix(url, "http") {
 		url = fmt.Sprintf("http://%s", url)
 	}
-	client, err := elastic.NewClient(elastic.SetURL(url), elastic.SetHealthcheckTimeoutStartup(30*time.Second))
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	httpClient := &http.Client{Transport: tr}
+	client, err := elastic.NewClient(
+		elastic.SetHttpClient(httpClient),
+		elastic.SetURL(url),
+		elastic.SetHealthcheckTimeoutStartup(30*time.Second),
+		elastic.SetSniff(false),
+	)
 	if err != nil {
 		return err
 	}
