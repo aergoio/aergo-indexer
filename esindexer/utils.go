@@ -32,6 +32,9 @@ func BulkIndexer(ctx context.Context, logger *log.Logger, client *elastic.Client
 			atomic.AddUint64(&total, 1)
 			bulk.Add(elastic.NewBulkIndexRequest().Id(d.GetID()).Doc(d))
 			if bulk.NumberOfActions() >= chunkSize {
+				dur := time.Since(begin).Seconds()
+				pps := int64(float64(total) / dur)
+				logger.Info().Int("chunkSize", chunkSize).Uint64("total", total).Int64("perSecond", pps).Msg(fmt.Sprintf("Commiting bulk chunk %ss", typeName))
 				res, err := bulk.Do(ctx)
 				if err != nil {
 					return err

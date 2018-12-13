@@ -1,7 +1,7 @@
 package esindexer
 
 import (
-	"math/big"
+	"fmt"
 	"time"
 
 	"github.com/aergoio/aergo-esindexer/types"
@@ -61,7 +61,8 @@ func ConvTx(tx *types.Tx) EsTx {
 	if tx.Body.Recipient != nil {
 		recipient = types.EncodeAddress(tx.Body.Recipient)
 	}
-	amount := big.NewInt(0).SetBytes(tx.GetBody().Amount).String()
+	//amount := big.NewInt(0).SetBytes(tx.GetBody().Amount).String()
+	amount := fmt.Sprint(tx.GetBody().Amount)
 	doc := EsTx{
 		BaseEsType: &BaseEsType{base58.Encode(tx.Hash)},
 		Account:    account,

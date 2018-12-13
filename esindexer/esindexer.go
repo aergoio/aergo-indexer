@@ -46,7 +46,7 @@ func NewEsIndexer(logger *log.Logger, esURL string, namePrefix string) *EsIndexe
 }
 
 func generateIndexPrefix(aliasNamePrefix string) string {
-	return fmt.Sprintf("%s%s_", aliasNamePrefix, time.Now().UTC().Format("2006-01-02t15:04:05z"))
+	return fmt.Sprintf("%s%s_", aliasNamePrefix, time.Now().UTC().Format("2006-01-02_15-04-05"))
 }
 
 // CreateIndexIfNotExists creates the indices and aliases in ES
@@ -278,19 +278,29 @@ func (ns *EsIndexer) IndexBlock(block *types.Block) {
 		ns.log.Warn().Err(err).Msg("Failed to index block")
 		return
 	}
-	ns.log.Info().Uint64("blockNo", block.Header.BlockNo).Str("blockHash", put.Id).Msg("Indexed block")
 
 	if len(block.Body.Txs) > 0 {
-		ns.IndexTxs(block, block.Body.Txs)
+		txChannel := make(chan EsType)
+		generator := func() error {
+			defer close(txChannel)
+			ns.IndexTxs(block, block.Body.Txs, txChannel)
+			return nil
+		}
+		BulkIndexer(ctx, ns.log, ns.client, txChannel, generator, ns.indexNamePrefix+"tx", "tx", 10000)
 	}
+
+	ns.log.Info().Uint64("blockNo", block.Header.BlockNo).Int("txs", len(block.Body.Txs)).Str("blockHash", put.Id).Msg("Indexed block")
 }
 
 // IndexBlocksInRange indexes blocks in the range of [fromBlockheight, toBlockHeight]
 func (ns *EsIndexer) IndexBlocksInRange(fromBlockHeight uint64, toBlockHeight uint64) {
 	ctx := context.Background()
-	channel := make(chan EsType)
+	channel := make(chan EsType, 1000)
+	done := make(chan struct{})
+	txChannel := make(chan EsType, 20000)
 	generator := func() error {
 		defer close(channel)
+		defer close(done)
 		ns.log.Info().Msg(fmt.Sprintf("Indexing %d missing blocks [%d..%d]", (1 + toBlockHeight - fromBlockHeight), fromBlockHeight, toBlockHeight))
 		for blockHeight := fromBlockHeight; blockHeight <= toBlockHeight; blockHeight++ {
 			blockQuery := make([]byte, 8)
@@ -301,7 +311,7 @@ func (ns *EsIndexer) IndexBlocksInRange(fromBlockHeight uint64, toBlockHeight ui
 				continue
 			}
 			if len(block.Body.Txs) > 0 {
-				ns.IndexTxs(block, block.Body.Txs)
+				ns.IndexTxs(block, block.Body.Txs, txChannel)
 			}
 			d := ConvBlock(block)
 			select {
@@ -312,32 +322,29 @@ func (ns *EsIndexer) IndexBlocksInRange(fromBlockHeight uint64, toBlockHeight ui
 		}
 		return nil
 	}
-	chunkSize := 5000
-	BulkIndexer(ctx, ns.log, ns.client, channel, generator, ns.indexNamePrefix+"block", "block", chunkSize)
+
+	waitForTx := func() error {
+		defer close(txChannel)
+		<-done
+		return nil
+	}
+	go BulkIndexer(ctx, ns.log, ns.client, txChannel, waitForTx, ns.indexNamePrefix+"tx", "tx", 10000)
+
+	BulkIndexer(ctx, ns.log, ns.client, channel, generator, ns.indexNamePrefix+"block", "block", 500)
+
 	ns.OnSyncComplete()
 }
 
 // IndexTxs indexes a list of transactions in bulk
-func (ns *EsIndexer) IndexTxs(block *types.Block, txs []*types.Tx) {
-	ctx := context.Background()
-	channel := make(chan EsType)
+func (ns *EsIndexer) IndexTxs(block *types.Block, txs []*types.Tx, channel chan EsType) {
+	// This simply pushed all Txs to the channel to be consumed elsewhere
 	blockTs := time.Unix(0, block.Header.Timestamp)
-	generator := func() error {
-		defer close(channel)
-		for _, tx := range txs {
-			d := ConvTx(tx)
-			d.Timestamp = blockTs
-			d.BlockNo = block.Header.BlockNo
-			select {
-			case channel <- d:
-			case <-ctx.Done():
-				return ctx.Err()
-			}
-		}
-		return nil
+	for _, tx := range txs {
+		d := ConvTx(tx)
+		d.Timestamp = blockTs
+		d.BlockNo = block.Header.BlockNo
+		channel <- d
 	}
-	chunkSize := 5000
-	BulkIndexer(ctx, ns.log, ns.client, channel, generator, ns.indexNamePrefix+"tx", "tx", chunkSize)
 }
 
 // DeleteBlocksInRange deletes previously synced blocks and their txs in the range of [fromBlockheight, toBlockHeight]

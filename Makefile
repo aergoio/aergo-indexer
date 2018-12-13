@@ -6,7 +6,7 @@ protoc:
 deps:
 	glide install
 
-bin/esindexer: *.go
+bin/esindexer: *.go esindexer/*go types/*.go
 	go build -o bin/esindexer main.go
 
 run:
