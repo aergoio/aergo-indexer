@@ -9,6 +9,8 @@ Check [esindexer/types.go](./esindexer/types.go) for the exact index mappings.
 
 You need Glide to install dependencies.
 
+    go get github.com/aergoio/aergo-esindexer
+    cd $GOPATH/src/github.com/aergoio/aergo-esindexer
     make all
 
 ## Usage
@@ -26,3 +28,8 @@ To reindex (starting from scratch):
 When reindexing, this creates new indices to sync the blockchain from scratch.
 After catching up, the aliases are replaced with the new data and the old indices removed.
 This means the old data can still be accessed until the sync is complete.
+
+## Build and run using Docker
+
+    docker build -t aergo/esindexer .
+    docker run aergo/esindexer esindexer -A ip:7845 -E ip:9200 --prefix chain_
