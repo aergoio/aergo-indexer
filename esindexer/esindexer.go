@@ -374,6 +374,7 @@ func (ns *EsIndexer) DeleteBlocksInRange(fromBlockHeight uint64, toBlockHeight u
 	res, err = ns.client.DeleteByQuery().Index(ns.indexNamePrefix + "tx").Query(query).Do(ctx)
 	if err != nil {
 		ns.log.Warn().Err(err).Msg("Failed to delete tx")
+	} else {
+		ns.log.Info().Int64("deleted", res.Deleted).Msg("Deleted tx")
 	}
-	ns.log.Info().Int64("deleted", res.Deleted).Msg("Deleted tx")
 }
