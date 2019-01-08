@@ -31,5 +31,5 @@ This means the old data can still be accessed until the sync is complete.
 
 ## Build and run using Docker
 
-    docker build -t aergo/esindexer .
+    docker build --build-arg GIT_TAG=70a67ba -t aergo/esindexer .
     docker run aergo/esindexer esindexer -A ip:7845 -E ip:9200 --prefix chain_
