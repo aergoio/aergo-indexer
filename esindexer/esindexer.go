@@ -173,7 +173,41 @@ func (ns *EsIndexer) Start(grpcClient types.AergoRPCServiceClient, reindex bool)
 	ns.UpdateLastBlockHeightFromDb()
 	ns.log.Info().Uint64("lastBlockHeight", ns.lastBlockHeight).Msg("Started Elasticsearch Indexer")
 
+	go ns.CheckConsistency()
+
 	return ns.StartStream()
+}
+
+type esBlockNo struct {
+	BlockNo uint64 `json:"no"`
+}
+
+// CheckConsistency gets all block numbers from 0 to ns.lastBlockHeight in order and checks for "holes"
+func (ns *EsIndexer) CheckConsistency() error {
+	ctx := context.Background()
+	query := elastic.NewMatchAllQuery()
+	fsc := elastic.NewFetchSourceContext(true).Include("no")
+	res, err := ns.client.Search().Index(ns.indexNamePrefix+"block").Query(query).FetchSourceContext(fsc).Sort("no", true).Size(int(ns.lastBlockHeight)).Do(ctx)
+	if err != nil {
+		return err
+	}
+	ns.log.Info().Uint64("missing", (ns.lastBlockHeight+1)-uint64(res.Hits.TotalHits)).Int64("total", res.Hits.TotalHits).Uint64("expected", ns.lastBlockHeight+1).Msg("Checked consistency, going to reindex missing blocks")
+	prevBlockNo := uint64(0)
+	missingBlocks := uint64(0)
+	for _, hit := range res.Hits.Hits {
+		blockNo := new(esBlockNo)
+		if err := json.Unmarshal(*hit.Source, blockNo); err != nil {
+			ns.log.Warn().Err(err).Msg("Failed to unmarshal blockNo source")
+			continue
+		}
+		if blockNo.BlockNo > prevBlockNo+1 {
+			missingBlocks = missingBlocks + (blockNo.BlockNo - prevBlockNo - 1)
+			ns.IndexBlocksInRange(prevBlockNo+1, blockNo.BlockNo-1)
+		}
+		prevBlockNo = blockNo.BlockNo
+	}
+	ns.log.Info().Uint64("missing", missingBlocks).Msg("Done with consistency check")
+	return nil
 }
 
 // StartStream starts the block stream and calls SyncBlock
