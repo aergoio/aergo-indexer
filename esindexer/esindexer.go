@@ -183,13 +183,14 @@ type esBlockNo struct {
 }
 
 // CheckConsistency gets all block numbers from 0 to ns.lastBlockHeight in order and checks for "holes"
-func (ns *EsIndexer) CheckConsistency() error {
+func (ns *EsIndexer) CheckConsistency() {
 	ctx := context.Background()
 	query := elastic.NewMatchAllQuery()
 	fsc := elastic.NewFetchSourceContext(true).Include("no")
 	res, err := ns.client.Search().Index(ns.indexNamePrefix+"block").Query(query).FetchSourceContext(fsc).Sort("no", true).Size(int(ns.lastBlockHeight)).Do(ctx)
 	if err != nil {
-		return err
+		ns.log.Warn().Err(err).Msg("Failed to query block numbers")
+		return
 	}
 	ns.log.Info().Uint64("missing", (ns.lastBlockHeight+1)-uint64(res.Hits.TotalHits)).Int64("total", res.Hits.TotalHits).Uint64("expected", ns.lastBlockHeight+1).Msg("Checked consistency, going to reindex missing blocks")
 	prevBlockNo := uint64(0)
@@ -207,7 +208,6 @@ func (ns *EsIndexer) CheckConsistency() error {
 		prevBlockNo = blockNo.BlockNo
 	}
 	ns.log.Info().Uint64("missing", missingBlocks).Msg("Done with consistency check")
-	return nil
 }
 
 // StartStream starts the block stream and calls SyncBlock
