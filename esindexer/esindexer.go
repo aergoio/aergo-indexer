@@ -185,28 +185,36 @@ type esBlockNo struct {
 // CheckConsistency gets all block numbers from 0 to ns.lastBlockHeight in order and checks for "holes"
 func (ns *EsIndexer) CheckConsistency() {
 	ctx := context.Background()
-	query := elastic.NewMatchAllQuery()
-	fsc := elastic.NewFetchSourceContext(true).Include("no")
-	res, err := ns.client.Search().Index(ns.indexNamePrefix+"block").Query(query).FetchSourceContext(fsc).Sort("no", true).Size(int(ns.lastBlockHeight)).Do(ctx)
-	if err != nil {
-		ns.log.Warn().Err(err).Msg("Failed to query block numbers")
-		return
-	}
-	ns.log.Info().Uint64("missing", (ns.lastBlockHeight+1)-uint64(res.Hits.TotalHits)).Int64("total", res.Hits.TotalHits).Uint64("expected", ns.lastBlockHeight+1).Msg("Checked consistency, going to reindex missing blocks")
+
 	prevBlockNo := uint64(0)
 	missingBlocks := uint64(0)
-	for _, hit := range res.Hits.Hits {
-		blockNo := new(esBlockNo)
-		if err := json.Unmarshal(*hit.Source, blockNo); err != nil {
-			ns.log.Warn().Err(err).Msg("Failed to unmarshal blockNo source")
-			continue
+
+	fsc := elastic.NewFetchSourceContext(true).Include("no")
+	scroll := ns.client.Scroll(ns.indexNamePrefix+"block").Type("block").Size(10000).Sort("no", true).FetchSourceContext(fsc)
+	for {
+		results, err := scroll.Do(ctx)
+		if err == io.EOF {
+			break // all results retrieved
 		}
-		if blockNo.BlockNo > prevBlockNo+1 {
-			missingBlocks = missingBlocks + (blockNo.BlockNo - prevBlockNo - 1)
-			ns.IndexBlocksInRange(prevBlockNo+1, blockNo.BlockNo-1)
+		if err != nil {
+			ns.log.Warn().Err(err).Msg("Failed to query block numbers")
+			break // something went wrong
 		}
-		prevBlockNo = blockNo.BlockNo
+
+		for _, hit := range results.Hits.Hits {
+			blockNo := new(esBlockNo)
+			if err := json.Unmarshal(*hit.Source, blockNo); err != nil {
+				ns.log.Warn().Err(err).Msg("Failed to unmarshal blockNo source")
+				continue
+			}
+			if blockNo.BlockNo > prevBlockNo+1 {
+				missingBlocks = missingBlocks + (blockNo.BlockNo - prevBlockNo - 1)
+				ns.IndexBlocksInRange(prevBlockNo+1, blockNo.BlockNo-1)
+			}
+			prevBlockNo = blockNo.BlockNo
+		}
 	}
+
 	ns.log.Info().Uint64("missing", missingBlocks).Msg("Done with consistency check")
 }
 
