@@ -1,6 +1,7 @@
 package esindexer
 
 import (
+	"fmt"
 	"math/big"
 	"time"
 
@@ -39,6 +40,8 @@ type EsTx struct {
 	Account   string    `json:"from"`
 	Recipient string    `json:"to"`
 	Amount    string    `json:"amount"` // string of BigInt
+	Type      string    `json:"type"`
+	Payload0  byte      `json:"payload0"` // first byte of payload
 }
 
 // ConvBlock converts Block from RPC into Elasticsearch type
@@ -59,15 +62,24 @@ func ConvTx(tx *types.Tx) EsTx {
 	}
 	recipient := ""
 	if tx.Body.Recipient != nil {
-		recipient = types.EncodeAddress(tx.Body.Recipient)
+		if len(tx.Body.Recipient) <= 12 {
+			recipient = string(tx.Body.Recipient)
+		} else {
+			recipient = types.EncodeAddress(tx.Body.Recipient)
+		}
 	}
 	amount := big.NewInt(0).SetBytes(tx.GetBody().Amount).String()
-	//amount := fmt.Sprint(tx.GetBody().Amount)
+	var payload0 byte
+	if len(tx.Body.Payload) > 0 {
+		payload0 = tx.Body.Payload[0]
+	}
 	doc := EsTx{
 		BaseEsType: &BaseEsType{base58.Encode(tx.Hash)},
 		Account:    account,
 		Recipient:  recipient,
 		Amount:     amount,
+		Type:       fmt.Sprintf("%d", tx.Body.Type),
+		Payload0:   payload0,
 	}
 	return doc
 }
@@ -92,6 +104,12 @@ var mappings = map[string]string{
 					},
 					"amount": {
 						"type": "keyword"
+					},
+					"type": {
+						"type": "keyword"
+					},
+					"payload0": {
+						"type": "byte"
 					}
 				}
 			}
