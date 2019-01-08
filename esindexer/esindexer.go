@@ -186,6 +186,16 @@ type esBlockNo struct {
 func (ns *EsIndexer) CheckConsistency() {
 	ctx := context.Background()
 
+	count, err := ns.client.Count(ns.indexNamePrefix + "block").Do(ctx)
+	if err != nil {
+		ns.log.Warn().Err(err).Msg("Failed to query block count")
+		return
+	}
+	ns.log.Info().Int64("total indexed", count).Uint64("expected", ns.lastBlockHeight+1).Msg("Checking consistency")
+	if uint64(count) >= ns.lastBlockHeight+1 {
+		return
+	}
+
 	prevBlockNo := uint64(0)
 	missingBlocks := uint64(0)
 
