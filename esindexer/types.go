@@ -105,7 +105,7 @@ func ConvNameTx(tx *types.Tx) EsName {
 		address = types.EncodeAddress(tx.Body.Account)
 	}
 	if action == 'u' {
-		nameByte, addressByte := parseUpdatePayload(tx.Body.Account)
+		nameByte, addressByte := parseUpdatePayload(tx.Body.GetPayload())
 		name = string(nameByte)
 		address = types.EncodeAddress(addressByte)
 	}
