@@ -78,7 +78,7 @@ func (ns *EsIndexer) CreateIndexIfNotExists(documentType string) {
 		ns.log.Info().Str("aliasName", aliasName).Str("indexName", indexName).Msg("Initializing alias")
 		createIndex, err := ns.client.CreateIndex(indexName).BodyString(mappings[documentType]).Do(ctx)
 		if err != nil || !createIndex.Acknowledged {
-			ns.log.Warn().Err(err).Msg("Error when creating index")
+			ns.log.Warn().Err(err).Str("indexName", indexName).Msg("Error when creating index")
 		}
 		ns.log.Info().Str("indexName", indexName).Msg("Created index")
 		// Update alias, only when not reindexing
@@ -138,6 +138,7 @@ func (ns *EsIndexer) OnSyncComplete() {
 		ns.reindexing = false
 		ns.UpdateAliasForType("tx")
 		ns.UpdateAliasForType("block")
+		ns.UpdateAliasForType("name")
 	}
 }
 
@@ -170,6 +171,7 @@ func (ns *EsIndexer) Start(grpcClient types.AergoRPCServiceClient, reindex bool)
 
 	ns.CreateIndexIfNotExists("tx")
 	ns.CreateIndexIfNotExists("block")
+	ns.CreateIndexIfNotExists("name")
 	ns.UpdateLastBlockHeightFromDb()
 	ns.log.Info().Uint64("lastBlockHeight", ns.lastBlockHeight).Msg("Started Elasticsearch Indexer")
 
@@ -344,12 +346,24 @@ func (ns *EsIndexer) IndexBlock(block *types.Block) {
 
 	if len(block.Body.Txs) > 0 {
 		txChannel := make(chan EsType)
+		nameChannel := make(chan EsType)
+		done := make(chan struct{})
 		generator := func() error {
 			defer close(txChannel)
-			ns.IndexTxs(block, block.Body.Txs, txChannel)
+			defer close(done)
+			ns.IndexTxs(block, block.Body.Txs, txChannel, nameChannel)
 			return nil
 		}
-		BulkIndexer(ctx, ns.log, ns.client, txChannel, generator, ns.indexNamePrefix+"tx", "tx", 10000)
+
+		waitForNames := func() error {
+			defer close(nameChannel)
+			<-done
+			return nil
+		}
+		go BulkIndexer(ctx, ns.log, ns.client, nameChannel, waitForNames, ns.indexNamePrefix+"name", "name", 2500, true)
+
+		BulkIndexer(ctx, ns.log, ns.client, txChannel, generator, ns.indexNamePrefix+"tx", "tx", 10000, false)
+
 	}
 
 	ns.log.Info().Uint64("blockNo", block.Header.BlockNo).Int("txs", len(block.Body.Txs)).Str("blockHash", put.Id).Msg("Indexed block")
@@ -361,6 +375,7 @@ func (ns *EsIndexer) IndexBlocksInRange(fromBlockHeight uint64, toBlockHeight ui
 	channel := make(chan EsType, 1000)
 	done := make(chan struct{})
 	txChannel := make(chan EsType, 20000)
+	nameChannel := make(chan EsType, 5000)
 	generator := func() error {
 		defer close(channel)
 		defer close(done)
@@ -370,11 +385,11 @@ func (ns *EsIndexer) IndexBlocksInRange(fromBlockHeight uint64, toBlockHeight ui
 			binary.LittleEndian.PutUint64(blockQuery, uint64(blockHeight))
 			block, err := ns.grpcClient.GetBlock(context.Background(), &types.SingleBytes{Value: blockQuery})
 			if err != nil {
-				ns.log.Warn().Uint64("blockHeight", blockHeight).Msg("Failed to get block")
+				ns.log.Warn().Uint64("blockHeight", blockHeight).Err(err).Msg("Failed to get block")
 				continue
 			}
 			if len(block.Body.Txs) > 0 {
-				ns.IndexTxs(block, block.Body.Txs, txChannel)
+				ns.IndexTxs(block, block.Body.Txs, txChannel, nameChannel)
 			}
 			d := ConvBlock(block)
 			select {
@@ -391,22 +406,34 @@ func (ns *EsIndexer) IndexBlocksInRange(fromBlockHeight uint64, toBlockHeight ui
 		<-done
 		return nil
 	}
-	go BulkIndexer(ctx, ns.log, ns.client, txChannel, waitForTx, ns.indexNamePrefix+"tx", "tx", 10000)
+	go BulkIndexer(ctx, ns.log, ns.client, txChannel, waitForTx, ns.indexNamePrefix+"tx", "tx", 10000, false)
 
-	BulkIndexer(ctx, ns.log, ns.client, channel, generator, ns.indexNamePrefix+"block", "block", 500)
+	waitForNames := func() error {
+		defer close(nameChannel)
+		<-done
+		return nil
+	}
+	go BulkIndexer(ctx, ns.log, ns.client, nameChannel, waitForNames, ns.indexNamePrefix+"name", "name", 2500, true)
+
+	BulkIndexer(ctx, ns.log, ns.client, channel, generator, ns.indexNamePrefix+"block", "block", 500, false)
 
 	ns.OnSyncComplete()
 }
 
 // IndexTxs indexes a list of transactions in bulk
-func (ns *EsIndexer) IndexTxs(block *types.Block, txs []*types.Tx, channel chan EsType) {
-	// This simply pushed all Txs to the channel to be consumed elsewhere
+func (ns *EsIndexer) IndexTxs(block *types.Block, txs []*types.Tx, channel chan EsType, nameChannel chan EsType) {
+	// This simply pushes all Txs to the channel to be consumed elsewhere
 	blockTs := time.Unix(0, block.Header.Timestamp)
 	for _, tx := range txs {
 		d := ConvTx(tx)
 		d.Timestamp = blockTs
 		d.BlockNo = block.Header.BlockNo
 		channel <- d
+		if tx.GetBody().GetType() == types.TxType_GOVERNANCE && string(tx.GetBody().GetRecipient()) == "aergo.name" {
+			nameDoc := ConvNameTx(tx)
+			nameDoc.UpdateBlock = d.BlockNo
+			nameChannel <- nameDoc
+		}
 	}
 }
 
@@ -429,5 +456,13 @@ func (ns *EsIndexer) DeleteBlocksInRange(fromBlockHeight uint64, toBlockHeight u
 		ns.log.Warn().Err(err).Msg("Failed to delete tx")
 	} else {
 		ns.log.Info().Int64("deleted", res.Deleted).Msg("Deleted tx")
+	}
+	// Delete invalidated name entries
+	query = elastic.NewRangeQuery("blockno").From(fromBlockHeight).To(toBlockHeight)
+	res, err = ns.client.DeleteByQuery().Index(ns.indexNamePrefix + "name").Query(query).Do(ctx)
+	if err != nil {
+		ns.log.Warn().Err(err).Msg("Failed to delete names")
+	} else {
+		ns.log.Info().Int64("deleted", res.Deleted).Msg("Deleted names")
 	}
 }

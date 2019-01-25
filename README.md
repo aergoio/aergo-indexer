@@ -2,8 +2,42 @@
 
 This is a go program that connects to aergo server over RPC and synchronizes blockchain metadata with an Elasticsearch cluster.
 
-This creates the indices `chain_block` and `chain_tx`. These are actually aliases that point to the latest version of the data.
+This creates the indices `block`, `tx`, and `name` (with a prefix). These are actually aliases that point to the latest version of the data.
 Check [esindexer/types.go](./esindexer/types.go) for the exact index mappings.
+
+## Indexed data
+
+Blocks
+```
+Field    Type        Comment
+_id      string      block hash
+ts       timestamp   block creation timestamp
+no       uint64      block number
+txs      uint        number of transactions
+```
+
+Transaction
+```
+Field    Type        Comment
+_id      string      tx hash
+ts       timestamp   block creation timestamp
+blockno  uint64      block number
+from     string
+to       string
+amount   string
+type     string      "0" or "1"
+payload0 byte        first byte of payload
+```
+
+Names
+```
+Field    Type        Comment
+_id      string      name + tx hash
+name     string
+address  string
+blockno  uint64      block in which name was updated
+tx       string      tx in which name was updated
+```
 
 ## Build
 

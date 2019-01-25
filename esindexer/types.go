@@ -3,6 +3,7 @@ package esindexer
 import (
 	"fmt"
 	"math/big"
+	"strings"
 	"time"
 
 	"github.com/aergoio/aergo-esindexer/types"
@@ -44,6 +45,15 @@ type EsTx struct {
 	Payload0  byte      `json:"payload0"` // first byte of payload
 }
 
+// EsName is a name-address mapping stored in elasticsearch
+type EsName struct {
+	*BaseEsType
+	Name        string `json:"name"`
+	Address     string `json:"address"`
+	UpdateBlock uint64 `json:"blockno"`
+	UpdateTx    string `json:"tx"`
+}
+
 // ConvBlock converts Block from RPC into Elasticsearch type
 func ConvBlock(block *types.Block) EsBlock {
 	return EsBlock{
@@ -82,6 +92,40 @@ func ConvTx(tx *types.Tx) EsTx {
 		Payload0:   payload0,
 	}
 	return doc
+}
+
+// ConvNameTx parses a name transaction into Elasticsearch type
+func ConvNameTx(tx *types.Tx) EsName {
+	var name string
+	var address string
+	payload := tx.GetBody().GetPayload()
+	action := payload[0]
+	if action == 'c' {
+		name = string(payload[1:])
+		address = types.EncodeAddress(tx.Body.Account)
+	}
+	if action == 'u' {
+		nameByte, addressByte := parseUpdatePayload(tx.Body.Account)
+		name = string(nameByte)
+		address = types.EncodeAddress(addressByte)
+	}
+	hash := base58.Encode(tx.Hash)
+	return EsName{
+		BaseEsType: &BaseEsType{fmt.Sprintf("%s-%s", name, hash)},
+		Name:       name,
+		Address:    address,
+		UpdateTx:   hash,
+	}
+}
+
+func parseUpdatePayload(p []byte) ([]byte, []byte) {
+	comma := strings.IndexByte(string(p), ',')
+	if comma < 0 {
+		return nil, nil
+	}
+	name := p[:comma]
+	to := p[comma+1:]
+	return []byte(name), []byte(to)
 }
 
 // EsMappings contains the elasticsearch mappings
@@ -127,6 +171,26 @@ var mappings = map[string]string{
 					},
 					"txs": {
 						"type": "long"
+					}
+				}
+			}
+		}
+	}`,
+	"name": `{
+		"mappings":{
+			"name":{
+				"properties": {
+					"name": {
+						"type": "keyword"
+					},
+					"address": {
+						"type": "keyword"
+					},
+					"blockno": {
+						"type": "long"
+					},
+					"tx": {
+						"type": "keyword"
 					}
 				}
 			}

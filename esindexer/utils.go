@@ -13,7 +13,7 @@ import (
 )
 
 // BulkIndexer is a utility function that uses a generator function to create ES documents and inserts them in chunks
-func BulkIndexer(ctx context.Context, logger *log.Logger, client *elastic.Client, channel chan EsType, generator func() error, indexName string, typeName string, chunkSize int) {
+func BulkIndexer(ctx context.Context, logger *log.Logger, client *elastic.Client, channel chan EsType, generator func() error, indexName string, typeName string, chunkSize int, upsert bool) {
 	// Setup a group of goroutines
 	// The first goroutine will emit documents and send it to the second goroutine via the channel.
 	// The second goroutine will simply bulk insert the documents.
@@ -30,7 +30,11 @@ func BulkIndexer(ctx context.Context, logger *log.Logger, client *elastic.Client
 		bulk := client.Bulk().Index(indexName).Type(typeName)
 		for d := range channel {
 			atomic.AddUint64(&total, 1)
-			bulk.Add(elastic.NewBulkIndexRequest().Id(d.GetID()).Doc(d))
+			if upsert {
+				bulk.Add(elastic.NewBulkIndexRequest().Id(d.GetID()).Doc(d))
+			} else {
+				bulk.Add(elastic.NewBulkUpdateRequest().Id(d.GetID()).Doc(d).DocAsUpsert(true))
+			}
 			if bulk.NumberOfActions() >= chunkSize {
 				dur := time.Since(begin).Seconds()
 				pps := int64(float64(total) / dur)
