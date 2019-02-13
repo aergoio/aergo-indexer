@@ -42,7 +42,7 @@ type EsTx struct {
 	Recipient string    `json:"to"`
 	Amount    string    `json:"amount"` // string of BigInt
 	Type      string    `json:"type"`
-	Payload0  byte      `json:"payload0"` // first byte of payload
+	Payload0  string    `json:"payload0"` // first byte of payload
 }
 
 // EsName is a name-address mapping stored in elasticsearch
@@ -64,24 +64,24 @@ func ConvBlock(block *types.Block) EsBlock {
 	}
 }
 
+func encodeAccount(account []byte) string {
+	if account == nil {
+		return ""
+	}
+	if len(account) <= 12 {
+		return string(account)
+	}
+	return types.EncodeAddress(account)
+}
+
 // ConvTx converts Tx from RPC into Elasticsearch type
 func ConvTx(tx *types.Tx) EsTx {
-	account := ""
-	if tx.Body.Account != nil {
-		account = types.EncodeAddress(tx.Body.Account)
-	}
-	recipient := ""
-	if tx.Body.Recipient != nil {
-		if len(tx.Body.Recipient) <= 12 {
-			recipient = string(tx.Body.Recipient)
-		} else {
-			recipient = types.EncodeAddress(tx.Body.Recipient)
-		}
-	}
+	account := encodeAccount(tx.Body.Account)
+	recipient := encodeAccount(tx.Body.Recipient)
 	amount := big.NewInt(0).SetBytes(tx.GetBody().Amount).String()
-	var payload0 byte
+	payload0 := ""
 	if len(tx.Body.Payload) > 0 {
-		payload0 = tx.Body.Payload[0]
+		payload0 = fmt.Sprintf("%d", tx.Body.Payload[0])
 	}
 	doc := EsTx{
 		BaseEsType: &BaseEsType{base58.Encode(tx.Hash)},
@@ -153,7 +153,7 @@ var mappings = map[string]string{
 						"type": "keyword"
 					},
 					"payload0": {
-						"type": "byte"
+						"type": "keyword"
 					}
 				}
 			}

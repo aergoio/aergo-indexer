@@ -429,6 +429,7 @@ func (ns *EsIndexer) IndexTxs(block *types.Block, txs []*types.Tx, channel chan 
 		d.Timestamp = blockTs
 		d.BlockNo = block.Header.BlockNo
 		channel <- d
+
 		if tx.GetBody().GetType() == types.TxType_GOVERNANCE && string(tx.GetBody().GetRecipient()) == "aergo.name" {
 			nameDoc := ConvNameTx(tx)
 			nameDoc.UpdateBlock = d.BlockNo

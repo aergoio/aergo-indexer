@@ -2,6 +2,7 @@ package esindexer
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sync/atomic"
@@ -11,6 +12,19 @@ import (
 	"github.com/olivere/elastic"
 	"golang.org/x/sync/errgroup"
 )
+
+func logBulkResponse(logger *log.Logger, res *elastic.BulkResponse) {
+	if res.Errors {
+		for _, v := range res.Items {
+			for action, item := range v {
+				if item.Error != nil {
+					resJSON, _ := json.Marshal(item.Error)
+					logger.Error().Str("type", item.Type).Str("action", action).Str("id", item.Id).Msg(string(resJSON))
+				}
+			}
+		}
+	}
+}
 
 // BulkIndexer is a utility function that uses a generator function to create ES documents and inserts them in chunks
 func BulkIndexer(ctx context.Context, logger *log.Logger, client *elastic.Client, channel chan EsType, generator func() error, indexName string, typeName string, chunkSize int, upsert bool) {
@@ -40,6 +54,7 @@ func BulkIndexer(ctx context.Context, logger *log.Logger, client *elastic.Client
 				pps := int64(float64(total) / dur)
 				logger.Info().Int("chunkSize", chunkSize).Uint64("total", total).Int64("perSecond", pps).Msg(fmt.Sprintf("Commiting bulk chunk %ss", typeName))
 				res, err := bulk.Do(ctx)
+				logBulkResponse(logger, res)
 				if err != nil {
 					return err
 				}
@@ -57,7 +72,11 @@ func BulkIndexer(ctx context.Context, logger *log.Logger, client *elastic.Client
 
 		// Commit the final batch before exiting
 		if bulk.NumberOfActions() > 0 {
-			_, err := bulk.Do(ctx)
+			dur := time.Since(begin).Seconds()
+			pps := int64(float64(total) / dur)
+			logger.Info().Int("chunkSize", chunkSize).Uint64("total", total).Int64("perSecond", pps).Msg(fmt.Sprintf("Commiting bulk chunk %ss", typeName))
+			res, err := bulk.Do(ctx)
+			logBulkResponse(logger, res)
 			if err != nil {
 				return err
 			}
