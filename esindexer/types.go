@@ -1,9 +1,9 @@
 package esindexer
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/big"
-	"strings"
 	"time"
 
 	"github.com/aergoio/aergo-esindexer/types"
@@ -94,20 +94,26 @@ func ConvTx(tx *types.Tx) EsTx {
 	return doc
 }
 
+type txPayload struct {
+	Name string   `json:"Name"`
+	Args []string `json:"Args"`
+}
+
 // ConvNameTx parses a name transaction into Elasticsearch type
 func ConvNameTx(tx *types.Tx) EsName {
-	var name string
+	var name = "error"
 	var address string
-	payload := tx.GetBody().GetPayload()
-	action := payload[0]
-	if action == 'c' {
-		name = string(payload[1:])
-		address = types.EncodeAddress(tx.Body.Account)
-	}
-	if action == 'u' {
-		nameByte, addressByte := parseUpdatePayload(payload[1:])
-		name = string(nameByte)
-		address = types.EncodeAddress(addressByte)
+	payloadSource := tx.GetBody().GetPayload()
+	payload := new(txPayload)
+	if err := json.Unmarshal(payloadSource, payload); err == nil {
+		if payload.Name == "v1createName" {
+			name = payload.Args[0]
+			address = types.EncodeAddress(tx.Body.Account)
+		}
+		if payload.Name == "v1updateName" {
+			name = payload.Args[0]
+			address = payload.Args[1]
+		}
 	}
 	hash := base58.Encode(tx.Hash)
 	return EsName{
@@ -116,16 +122,6 @@ func ConvNameTx(tx *types.Tx) EsName {
 		Address:    address,
 		UpdateTx:   hash,
 	}
-}
-
-func parseUpdatePayload(p []byte) ([]byte, []byte) {
-	comma := strings.IndexByte(string(p), ',')
-	if comma < 0 {
-		return nil, nil
-	}
-	name := p[:comma]
-	to := p[comma+1:]
-	return []byte(name), []byte(to)
 }
 
 // EsMappings contains the elasticsearch mappings
