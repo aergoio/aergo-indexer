@@ -106,12 +106,11 @@ func ConvNameTx(tx *types.Tx) EsName {
 	payloadSource := tx.GetBody().GetPayload()
 	payload := new(txPayload)
 	if err := json.Unmarshal(payloadSource, payload); err == nil {
+		name = payload.Args[0]
 		if payload.Name == "v1createName" {
-			name = payload.Args[0]
-			address = types.EncodeAddress(tx.Body.Account)
+			address = encodeAccount(tx.Body.Account)
 		}
 		if payload.Name == "v1updateName" {
-			name = payload.Args[0]
 			address = payload.Args[1]
 		}
 	}
