@@ -1,4 +1,4 @@
-all: bin/esindexer deps
+all: bin/esindexer
 
 protoc:
 	protoc -I./aergo-protobuf/proto --go_out=plugins=grpc,paths=source_relative:./types ./aergo-protobuf/proto/*.proto
@@ -6,7 +6,7 @@ protoc:
 deps:
 	glide install
 
-bin/esindexer: *.go esindexer/*go types/*.go
+bin/esindexer: *.go esindexer/*go types/*.go deps
 	go build -o bin/esindexer main.go
 
 run:

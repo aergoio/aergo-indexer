@@ -1,35 +1,14 @@
-hash: dccd3bb98da9c9b2c73e2f6baf30f5bd4e1dfd9504422d8f606294d618465c80
-updated: 2018-12-10T11:46:21.16173+09:00
+hash: cb2de97578a7c8f4061dba3147393c7ca7c00cea0df923cedf29bdc4c6ed9159
+updated: 2019-04-03T15:42:30.899963+09:00
 imports:
 - name: github.com/aergoio/aergo-lib
   version: 5ddbd01605af54296ffa23090505cf16b28566a4
   subpackages:
-  - db
   - log
-- name: github.com/agl/ed25519
-  version: 5312a61534124124185d41f09206b9fef1d88403
-  subpackages:
-  - edwards25519
-  - extra25519
 - name: github.com/anaskhan96/base58check
   version: fcff33ba49dde3181fa69fb346f45582e52a3815
-- name: github.com/AndreasBriese/bbloom
-  version: 343706a395b76e5ca5c7dca46a5d937b48febc74
-- name: github.com/btcsuite/btcd
-  version: 67e573d211ace594f1366b4ce9d39726c4b19bd0
-  subpackages:
-  - btcec
-- name: github.com/dgryski/go-farm
-  version: 2de33835d10275975374b37b2dcfd22c9020a1f5
 - name: github.com/fsnotify/fsnotify
   version: ccc981bf80385c528a65fbfdd49bf2d8da22aa23
-- name: github.com/gogo/protobuf
-  version: 636bf0302bc95575d69441b25a2603156ffdddf1
-  subpackages:
-  - jsonpb
-  - proto
-  - sortkeys
-  - types
 - name: github.com/golang/protobuf
   version: b4deda0973fb4c70b50d226b1af49f3da59f5265
   subpackages:
@@ -38,14 +17,6 @@ imports:
   - ptypes/any
   - ptypes/duration
   - ptypes/timestamp
-- name: github.com/golang/snappy
-  version: 2e65f85255dbc3072edf28d6b5b8efc472979f5a
-- name: github.com/gxed/hashland
-  version: d9f6b97f8db22dd1e090fd0bbbe98f09cc7dd0a8
-  subpackages:
-  - keccakpg
-- name: github.com/hashicorp/go-hclog
-  version: 61d530d6c27f994fb6c83b80f99a69c54125ec8a
 - name: github.com/hashicorp/hcl
   version: 65a6292f0157eff210d03ed1bf6c59b190b8b906
   subpackages:
@@ -60,12 +31,6 @@ imports:
   - json/token
 - name: github.com/inconshreveable/mousetrap
   version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
-- name: github.com/libp2p/go-libp2p-crypto
-  version: 274de1bb6c27780863df6b230c91324ab481dab2
-  subpackages:
-  - pb
-- name: github.com/libp2p/go-libp2p-peer
-  version: 993d742bc29dcf4894b7730ba610fd78900be76c
 - name: github.com/magiconair/properties
   version: c2353362d570a7bfa228149c62842019201cfb71
 - name: github.com/mailru/easyjson
@@ -75,23 +40,17 @@ imports:
   - jlexer
   - jwriter
 - name: github.com/mattn/go-colorable
-  version: 167de6bfdfba052fa6b2d3664c8f5272e23c9072
+  version: 3a70a971f94a22f2fa562ffcc7a0eb45f5daf045
 - name: github.com/mattn/go-isatty
   version: 3fb116b820352b7f0c281308a4d6250c22d94e27
-- name: github.com/minio/blake2b-simd
-  version: 3f5f724cb5b182a5c278d6d3d55b40e7f8c2efb4
-- name: github.com/minio/sha256-simd
-  version: ad98a36ba0da87206e3378c556abbfeaeaa98668
 - name: github.com/mitchellh/mapstructure
   version: 3536a929edddb9a5b34bd6861dc4a9647cb459fe
 - name: github.com/mr-tron/base58
   version: c8897612421d88a51012eaa53bf7267686173ae5
   subpackages:
   - base58
-- name: github.com/multiformats/go-multihash
-  version: a91e75d03bf4dba801af7b159c8b2aa7b5f47ea8
 - name: github.com/olivere/elastic
-  version: 1619150b007041b6dba8aa447f0e2d151cc2b4c5
+  version: 8a3f2cdf773521f77a2b9517d131c6cf28be6ca1
   subpackages:
   - config
   - uritemplates
@@ -100,12 +59,10 @@ imports:
 - name: github.com/pkg/errors
   version: 059132a15dd08d6704c67711dae0cf35ab991756
 - name: github.com/rs/zerolog
-  version: 8747b7b3a51b5d08ee7ac50eaf4869edaf9f714a
+  version: 651d361cfeb9d0f5b9f1d14b162c66c82509ef6d
   subpackages:
   - internal/cbor
   - internal/json
-- name: github.com/spaolacci/murmur3
-  version: f09979ecbc725b9e6d41a297405f65e7e8804acc
 - name: github.com/spf13/afero
   version: d40851caa0d747393da1ffb28f7f9d8b4eeffebd
   subpackages:
@@ -119,35 +76,7 @@ imports:
 - name: github.com/spf13/pflag
   version: 298182f68c66c05229eb03ac171abe6e309ee79a
 - name: github.com/spf13/viper
-  version: 6d33b5a963d922d182c91e8a1c88d81fd150cfd4
-- name: github.com/sunpuyo/badger
-  version: bb757672e2c7e90b0707ab643972dbfcf638aebf
-  subpackages:
-  - options
-  - protos
-  - skl
-  - table
-  - "y"
-- name: github.com/syndtr/goleveldb
-  version: f9080354173f192dfc8821931eacf9cfd6819253
-  subpackages:
-  - leveldb
-  - leveldb/cache
-  - leveldb/comparer
-  - leveldb/errors
-  - leveldb/filter
-  - leveldb/iterator
-  - leveldb/journal
-  - leveldb/memdb
-  - leveldb/opt
-  - leveldb/storage
-  - leveldb/table
-  - leveldb/util
-- name: golang.org/x/crypto
-  version: e4dc69e5b2fd71dcaf8bd5d054eb936deb78d1fa
-  subpackages:
-  - blake2s
-  - sha3
+  version: 9e56dacc08fbbf8c9ee2dbc717553c758ce42bc9
 - name: golang.org/x/net
   version: 03003ca0c849e57b6ea29a4bab8d3cb6e4d568fe
   subpackages:
@@ -165,7 +94,6 @@ imports:
 - name: golang.org/x/sys
   version: 66b7b1311ac80bbafcd2daeef9a5e6e2cd1e2399
   subpackages:
-  - cpu
   - unix
 - name: golang.org/x/text
   version: 6f44c5a2ea40ee3593d98cdcc905cc1fdaa660e2

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
@@ -83,7 +84,8 @@ func waitForClient(serverAddr string) types.AergoRPCServiceClient {
 	var conn *grpc.ClientConn
 	var err error
 	for {
-		conn, err = grpc.Dial(serverAddr, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(5*time.Second))
+		ctx := context.Background()
+		conn, err = grpc.DialContext(ctx, serverAddr, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(5*time.Second))
 		if err == nil && conn != nil {
 			break
 		}
