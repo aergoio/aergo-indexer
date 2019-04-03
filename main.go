@@ -87,7 +87,8 @@ func waitForClient(serverAddr string) types.AergoRPCServiceClient {
 		if err == nil && conn != nil {
 			break
 		}
-		logger.Info().Str("serverAddr", serverAddr).Msg("Could not connect to aergo server, retrying")
+		logger.Info().Str("serverAddr", serverAddr).Err(err).Msg("Could not connect to aergo server, retrying")
+		time.Sleep(time.Second)
 	}
 	logger.Info().Str("serverAddr", serverAddr).Msg("Connected to aergo server")
 	return types.NewAergoRPCServiceClient(conn)
