@@ -30,9 +30,10 @@ type EsIndexer struct {
 	reindexing      bool
 	esURL           string
 	stream          types.AergoRPCService_ListBlockStreamClient
+	nameCache       map[string]string
 }
 
-// NewEsIndexer createws new EsIndexer instance
+// NewEsIndexer creates new EsIndexer instance
 func NewEsIndexer(logger *log.Logger, esURL string, namePrefix string) *EsIndexer {
 	aliasNamePrefix := namePrefix
 	svc := &EsIndexer{
@@ -43,6 +44,7 @@ func NewEsIndexer(logger *log.Logger, esURL string, namePrefix string) *EsIndexe
 		lastBlockHash:   "",
 		log:             logger,
 		reindexing:      false,
+		nameCache:       map[string]string{},
 	}
 	return svc
 }
@@ -422,19 +424,43 @@ func (ns *EsIndexer) IndexBlocksInRange(fromBlockHeight uint64, toBlockHeight ui
 
 // IndexTxs indexes a list of transactions in bulk
 func (ns *EsIndexer) IndexTxs(block *types.Block, txs []*types.Tx, channel chan EsType, nameChannel chan EsType) {
+	var nameCacheUpdates []EsName
 	// This simply pushes all Txs to the channel to be consumed elsewhere
 	blockTs := time.Unix(0, block.Header.Timestamp)
 	for _, tx := range txs {
 		d := ConvTx(tx)
 		d.Timestamp = blockTs
 		d.BlockNo = block.Header.BlockNo
+
+		// Resolve names
+		var err error
+		if len(d.Account) <= 12 {
+			d.Account, err = ns.resolveName(d.Account, d.BlockNo)
+			if err != nil {
+				ns.log.Warn().Err(err).Str("account", d.Account).Msg("Failed to resolve name")
+			}
+		}
+		if len(d.Recipient) <= 12 {
+			d.Recipient, err = ns.resolveName(d.Recipient, d.BlockNo)
+			if err != nil {
+				ns.log.Warn().Err(err).Str("recipient", d.Recipient).Msg("Failed to resolve name")
+			}
+		}
+
+		// Add tx to channel
 		channel <- d
 
+		// Process name transactions
 		if tx.GetBody().GetType() == types.TxType_GOVERNANCE && string(tx.GetBody().GetRecipient()) == "aergo.name" {
 			nameDoc := ConvNameTx(tx)
 			nameDoc.UpdateBlock = d.BlockNo
+			nameCacheUpdates = append(nameCacheUpdates, nameDoc)
 			nameChannel <- nameDoc
 		}
+	}
+	// Update name cache AFTER all tx of this block are processed
+	for _, nameDoc := range nameCacheUpdates {
+		ns.nameCache[nameDoc.Name] = nameDoc.Address
 	}
 }
 
@@ -466,4 +492,43 @@ func (ns *EsIndexer) DeleteBlocksInRange(fromBlockHeight uint64, toBlockHeight u
 	} else {
 		ns.log.Info().Int64("deleted", res.Deleted).Msg("Deleted names")
 	}
+}
+
+func isInternalName(name string) bool {
+	switch name {
+	case
+		"aergo.name",
+		"aergo.system":
+		return true
+	}
+	return false
+}
+
+func (ns *EsIndexer) resolveName(name string, atBlockHeight uint64) (string, error) {
+	// Leave internal names as-is
+	if isInternalName(name) {
+		return name, nil
+	}
+	// Use cache if possible (has in-flight names which are not yet indexed)
+	if address, ok := ns.nameCache[name]; ok {
+		return address, nil
+	}
+
+	ctx := context.Background()
+	query := elastic.NewBoolQuery()
+	query = query.Filter(elastic.NewTermQuery("name", name))
+	query = query.Filter(elastic.NewRangeQuery("blockno").Lt(atBlockHeight))
+	res, err := ns.client.Search().Index(ns.indexNamePrefix+"name").Query(query).Sort("blockno", false).Size(1).Do(ctx)
+	if err != nil {
+		return name, err
+	}
+	if res.Hits.TotalHits == 0 {
+		return name, errors.New("not found in database")
+	}
+	nameDoc := new(EsName)
+	err = json.Unmarshal(*res.Hits.Hits[0].Source, nameDoc)
+	if err != nil {
+		return name, err
+	}
+	return nameDoc.Address, nil
 }
