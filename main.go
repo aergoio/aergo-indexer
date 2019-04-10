@@ -23,6 +23,7 @@ var (
 		Run:   rootRun,
 	}
 	reindexingMode  bool
+	exitOnComplete  bool
 	host            string
 	port            int32
 	esURL           string
@@ -38,6 +39,7 @@ var (
 func init() {
 	fs := rootCmd.PersistentFlags()
 	fs.BoolVar(&reindexingMode, "reindex", false, "reindex blocks from genesis and swap index after catching up")
+	fs.BoolVar(&exitOnComplete, "exit-on-complete", false, "exit when reindexing sync completes for the first time")
 	fs.StringVarP(&host, "host", "H", "localhost", "host address of aergo server")
 	fs.Int32VarP(&port, "port", "p", 7845, "port number of aergo server")
 	fs.StringVarP(&aergoAddress, "aergo", "A", "", "host and port of aergo server. Alternative to setting host and port separately.")
@@ -58,7 +60,7 @@ func rootRun(cmd *cobra.Command, args []string) {
 	indexer = esindexer.NewEsIndexer(logger, esURL, indexNamePrefix)
 	client = waitForClient(getServerAddress())
 
-	err := indexer.Start(client, reindexingMode)
+	err := indexer.Start(client, reindexingMode, exitOnComplete)
 	if err != nil {
 		logger.Warn().Err(err).Str("esURL", esURL).Msg("Could not start elasticsearch indexer")
 		return
@@ -69,7 +71,14 @@ func rootRun(cmd *cobra.Command, args []string) {
 	}, logger)
 
 	for {
-		time.Sleep(time.Minute)
+		if exitOnComplete {
+			if indexer.State == "stopped" {
+				break
+			}
+			time.Sleep(time.Second)
+		} else {
+			time.Sleep(time.Minute)
+		}
 	}
 }
 

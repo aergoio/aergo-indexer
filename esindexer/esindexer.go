@@ -28,6 +28,8 @@ type EsIndexer struct {
 	lastBlockHash   string
 	log             *log.Logger
 	reindexing      bool
+	exitOnComplete  bool
+	State           string
 	esURL           string
 	stream          types.AergoRPCService_ListBlockStreamClient
 	nameCache       map[string]string
@@ -42,8 +44,10 @@ func NewEsIndexer(logger *log.Logger, esURL string, namePrefix string) *EsIndexe
 		indexNamePrefix: generateIndexPrefix(aliasNamePrefix),
 		lastBlockHeight: 0,
 		lastBlockHash:   "",
+		State:           "booting",
 		log:             logger,
 		reindexing:      false,
+		exitOnComplete:  false,
 		nameCache:       map[string]string{},
 	}
 	return svc
@@ -141,11 +145,14 @@ func (ns *EsIndexer) OnSyncComplete() {
 		ns.UpdateAliasForType("tx")
 		ns.UpdateAliasForType("block")
 		ns.UpdateAliasForType("name")
+		if ns.exitOnComplete {
+			ns.Stop()
+		}
 	}
 }
 
 // Start setups the indexer
-func (ns *EsIndexer) Start(grpcClient types.AergoRPCServiceClient, reindex bool) error {
+func (ns *EsIndexer) Start(grpcClient types.AergoRPCServiceClient, reindex bool, exitOnComplete bool) error {
 	url := ns.esURL
 	if !strings.HasPrefix(url, "http") {
 		url = fmt.Sprintf("http://%s", url)
@@ -169,6 +176,7 @@ func (ns *EsIndexer) Start(grpcClient types.AergoRPCServiceClient, reindex bool)
 	if reindex {
 		ns.log.Warn().Msg("Reindexing database. Will sync from scratch and replace index aliases when caught up")
 		ns.reindexing = true
+		ns.exitOnComplete = exitOnComplete
 	}
 
 	ns.CreateIndexIfNotExists("tx")
@@ -251,8 +259,12 @@ func (ns *EsIndexer) StartStream() error {
 	if err != nil {
 		return err
 	}
+	ns.State = "running"
 	go func() {
 		for {
+			if ns.State == "stopped" {
+				return
+			}
 			block, err := ns.stream.Recv()
 			if err == io.EOF {
 				ns.log.Warn().Msg("Stream ended")
@@ -277,6 +289,7 @@ func (ns *EsIndexer) RestartStream() {
 		ns.stream = nil
 	}
 	ns.log.Info().Msg("Restarting stream in 5 seconds")
+	ns.State = "restarting"
 	time.Sleep(5 * time.Second)
 	err := ns.StartStream()
 	if err != nil {
@@ -287,7 +300,11 @@ func (ns *EsIndexer) RestartStream() {
 
 // Stop stops the indexer
 func (ns *EsIndexer) Stop() {
-
+	if ns.stream != nil {
+		ns.stream.CloseSend()
+		ns.stream = nil
+		ns.State = "stopped"
+	}
 }
 
 // SyncBlock indexes new block after checking for skipped blocks and reorgs
