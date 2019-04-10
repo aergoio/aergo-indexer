@@ -77,7 +77,6 @@ func (ns *EsIndexer) CreateIndexIfNotExists(documentType string) {
 	// Create new index
 	if ns.reindexing || !initialized {
 		indexName := ns.indexNamePrefix + documentType
-		ns.log.Info().Str("aliasName", aliasName).Str("indexName", indexName).Msg("Initializing alias")
 		createIndex, err := ns.client.CreateIndex(indexName).BodyString(mappings[documentType]).Do(ctx)
 		if err != nil || !createIndex.Acknowledged {
 			ns.log.Warn().Err(err).Str("indexName", indexName).Msg("Error when creating index")
@@ -136,6 +135,7 @@ func (ns *EsIndexer) UpdateAliasForType(documentType string) {
 
 // OnSyncComplete is called when sync is finished catching up
 func (ns *EsIndexer) OnSyncComplete() {
+	ns.log.Info().Msg("Sync complete")
 	if ns.reindexing {
 		ns.reindexing = false
 		ns.UpdateAliasForType("tx")
@@ -178,6 +178,18 @@ func (ns *EsIndexer) Start(grpcClient types.AergoRPCServiceClient, reindex bool)
 	ns.log.Info().Uint64("lastBlockHeight", ns.lastBlockHeight).Msg("Started Elasticsearch Indexer")
 
 	go ns.CheckConsistency()
+
+	if ns.reindexing {
+		// Don't wait for sync to start when blockchain is booting
+		nodeBlockheight, err := ns.GetNodeBlockHeight()
+		if err != nil {
+			ns.log.Warn().Err(err).Msg("Failed to query node's block height")
+		} else {
+			if nodeBlockheight == 0 {
+				ns.OnSyncComplete()
+			}
+		}
+	}
 
 	return ns.StartStream()
 }
@@ -336,6 +348,15 @@ func (ns *EsIndexer) UpdateLastBlockHeightFromDb() {
 	ns.lastBlockHash = bestBlock.id
 }
 
+// GetNodeBlockHeight updates state from db
+func (ns *EsIndexer) GetNodeBlockHeight() (uint64, error) {
+	blockchain, err := ns.grpcClient.Blockchain(context.Background(), &types.Empty{})
+	if err != nil {
+		return 0, err
+	}
+	return blockchain.BestHeight, nil
+}
+
 // IndexBlock indexes one block
 func (ns *EsIndexer) IndexBlock(block *types.Block) {
 	ctx := context.Background()
@@ -365,7 +386,6 @@ func (ns *EsIndexer) IndexBlock(block *types.Block) {
 		go BulkIndexer(ctx, ns.log, ns.client, nameChannel, waitForNames, ns.indexNamePrefix+"name", "name", 2500, true)
 
 		BulkIndexer(ctx, ns.log, ns.client, txChannel, generator, ns.indexNamePrefix+"tx", "tx", 10000, false)
-
 	}
 
 	ns.log.Info().Uint64("blockNo", block.Header.BlockNo).Int("txs", len(block.Body.Txs)).Str("blockHash", put.Id).Msg("Indexed block")
