@@ -32,7 +32,6 @@ type EsIndexer struct {
 	State           string
 	esURL           string
 	stream          types.AergoRPCService_ListBlockStreamClient
-	nameCache       map[string]string
 }
 
 // NewEsIndexer creates new EsIndexer instance
@@ -48,7 +47,6 @@ func NewEsIndexer(logger *log.Logger, esURL string, namePrefix string) *EsIndexe
 		log:             logger,
 		reindexing:      false,
 		exitOnComplete:  false,
-		nameCache:       map[string]string{},
 	}
 	return svc
 }
@@ -461,7 +459,6 @@ func (ns *EsIndexer) IndexBlocksInRange(fromBlockHeight uint64, toBlockHeight ui
 
 // IndexTxs indexes a list of transactions in bulk
 func (ns *EsIndexer) IndexTxs(block *types.Block, txs []*types.Tx, channel chan EsType, nameChannel chan EsType) {
-	var nameCacheUpdates []EsName
 	// This simply pushes all Txs to the channel to be consumed elsewhere
 	blockTs := time.Unix(0, block.Header.Timestamp)
 	for _, tx := range txs {
@@ -476,13 +473,8 @@ func (ns *EsIndexer) IndexTxs(block *types.Block, txs []*types.Tx, channel chan 
 		if tx.GetBody().GetType() == types.TxType_GOVERNANCE && string(tx.GetBody().GetRecipient()) == "aergo.name" {
 			nameDoc := ns.ConvNameTx(tx, d.BlockNo)
 			nameDoc.UpdateBlock = d.BlockNo
-			nameCacheUpdates = append(nameCacheUpdates, nameDoc)
 			nameChannel <- nameDoc
 		}
-	}
-	// Update name cache AFTER all tx of this block are processed
-	for _, nameDoc := range nameCacheUpdates {
-		ns.nameCache[nameDoc.Name] = nameDoc.Address
 	}
 }
 
