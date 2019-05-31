@@ -1,14 +1,26 @@
 package esindexer
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"math/big"
 	"time"
 
 	"github.com/aergoio/aergo-esindexer/types"
+	"github.com/golang/protobuf/proto"
 	"github.com/mr-tron/base58/base58"
 )
+
+func isInternalName(name string) bool {
+	switch name {
+	case
+		"aergo.name",
+		"aergo.system":
+		return true
+	}
+	return false
+}
 
 // EsType is an interface for structs to be used as ES documents
 type EsType interface {
@@ -31,6 +43,7 @@ type EsBlock struct {
 	Timestamp time.Time `json:"ts"`
 	BlockNo   uint64    `json:"no"`
 	TxCount   uint      `json:"txs"`
+	Size      int64     `json:"size"`
 }
 
 // EsTx is a transaction stored in elasticsearch
@@ -55,12 +68,13 @@ type EsName struct {
 }
 
 // ConvBlock converts Block from RPC into Elasticsearch type
-func ConvBlock(block *types.Block) EsBlock {
+func (ns *EsIndexer) ConvBlock(block *types.Block) EsBlock {
 	return EsBlock{
 		BaseEsType: &BaseEsType{base58.Encode(block.Hash)},
 		Timestamp:  time.Unix(0, block.Header.Timestamp),
 		BlockNo:    block.Header.BlockNo,
 		TxCount:    uint(len(block.Body.Txs)),
+		Size:       int64(proto.Size(block)),
 	}
 }
 
@@ -74,10 +88,28 @@ func encodeAccount(account []byte) string {
 	return types.EncodeAddress(account)
 }
 
+func (ns *EsIndexer) encodeAndResolveAccount(account []byte, blockNo uint64) string {
+	var encoded = encodeAccount(account)
+	if len(encoded) > 12 || isInternalName(encoded) || encoded == "" {
+		return encoded
+	}
+	// Resolve name
+	var nameRequest = &types.Name{
+		Name:    encoded,
+		BlockNo: blockNo,
+	}
+	ctx := context.Background()
+	nameInfo, err := ns.grpcClient.GetNameInfo(ctx, nameRequest)
+	if err != nil {
+		return "UNRESOLVED: " + encoded
+	}
+	return encodeAccount(nameInfo.GetDestination())
+}
+
 // ConvTx converts Tx from RPC into Elasticsearch type
-func ConvTx(tx *types.Tx) EsTx {
-	account := encodeAccount(tx.Body.Account)
-	recipient := encodeAccount(tx.Body.Recipient)
+func (ns *EsIndexer) ConvTx(tx *types.Tx, blockNo uint64) EsTx {
+	account := ns.encodeAndResolveAccount(tx.Body.Account, blockNo)
+	recipient := ns.encodeAndResolveAccount(tx.Body.Recipient, blockNo)
 	amount := big.NewInt(0).SetBytes(tx.GetBody().Amount).String()
 	payload0 := ""
 	if len(tx.Body.Payload) > 0 {
@@ -100,7 +132,7 @@ type txPayload struct {
 }
 
 // ConvNameTx parses a name transaction into Elasticsearch type
-func ConvNameTx(tx *types.Tx) EsName {
+func (ns *EsIndexer) ConvNameTx(tx *types.Tx, blockNo uint64) EsName {
 	var name = "error"
 	var address string
 	payloadSource := tx.GetBody().GetPayload()
@@ -108,7 +140,7 @@ func ConvNameTx(tx *types.Tx) EsName {
 	if err := json.Unmarshal(payloadSource, payload); err == nil {
 		name = payload.Args[0]
 		if payload.Name == "v1createName" {
-			address = encodeAccount(tx.Body.Account)
+			address = ns.encodeAndResolveAccount(tx.Body.Account, blockNo)
 		}
 		if payload.Name == "v1updateName" {
 			address = payload.Args[1]
@@ -165,6 +197,9 @@ var mappings = map[string]string{
 						"type": "long"
 					},
 					"txs": {
+						"type": "long"
+					},
+					"size": {
 						"type": "long"
 					}
 				}
