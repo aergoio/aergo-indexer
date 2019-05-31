@@ -100,6 +100,8 @@ func (VerifyStatus) EnumDescriptor() ([]byte, []int) {
 type BlockchainStatus struct {
 	BestBlockHash        []byte   `protobuf:"bytes,1,opt,name=best_block_hash,json=bestBlockHash,proto3" json:"best_block_hash,omitempty"`
 	BestHeight           uint64   `protobuf:"varint,2,opt,name=best_height,json=bestHeight,proto3" json:"best_height,omitempty"`
+	ConsensusInfo        string   `protobuf:"bytes,3,opt,name=consensus_info,json=consensusInfo,proto3" json:"consensus_info,omitempty"`
+	BestChainIdHash      []byte   `protobuf:"bytes,4,opt,name=best_chain_id_hash,json=bestChainIdHash,proto3" json:"best_chain_id_hash,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -144,6 +146,219 @@ func (m *BlockchainStatus) GetBestHeight() uint64 {
 	return 0
 }
 
+func (m *BlockchainStatus) GetConsensusInfo() string {
+	if m != nil {
+		return m.ConsensusInfo
+	}
+	return ""
+}
+
+func (m *BlockchainStatus) GetBestChainIdHash() []byte {
+	if m != nil {
+		return m.BestChainIdHash
+	}
+	return nil
+}
+
+type ChainId struct {
+	Magic                string   `protobuf:"bytes,1,opt,name=magic,proto3" json:"magic,omitempty"`
+	Public               bool     `protobuf:"varint,2,opt,name=public,proto3" json:"public,omitempty"`
+	Mainnet              bool     `protobuf:"varint,3,opt,name=mainnet,proto3" json:"mainnet,omitempty"`
+	Consensus            string   `protobuf:"bytes,4,opt,name=consensus,proto3" json:"consensus,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ChainId) Reset()         { *m = ChainId{} }
+func (m *ChainId) String() string { return proto.CompactTextString(m) }
+func (*ChainId) ProtoMessage()    {}
+func (*ChainId) Descriptor() ([]byte, []int) {
+	return fileDescriptor_77a6da22d6a3feb1, []int{1}
+}
+
+func (m *ChainId) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ChainId.Unmarshal(m, b)
+}
+func (m *ChainId) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ChainId.Marshal(b, m, deterministic)
+}
+func (m *ChainId) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ChainId.Merge(m, src)
+}
+func (m *ChainId) XXX_Size() int {
+	return xxx_messageInfo_ChainId.Size(m)
+}
+func (m *ChainId) XXX_DiscardUnknown() {
+	xxx_messageInfo_ChainId.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ChainId proto.InternalMessageInfo
+
+func (m *ChainId) GetMagic() string {
+	if m != nil {
+		return m.Magic
+	}
+	return ""
+}
+
+func (m *ChainId) GetPublic() bool {
+	if m != nil {
+		return m.Public
+	}
+	return false
+}
+
+func (m *ChainId) GetMainnet() bool {
+	if m != nil {
+		return m.Mainnet
+	}
+	return false
+}
+
+func (m *ChainId) GetConsensus() string {
+	if m != nil {
+		return m.Consensus
+	}
+	return ""
+}
+
+// ChainInfo returns chain configuration
+type ChainInfo struct {
+	Id                   *ChainId `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	BpNumber             uint32   `protobuf:"varint,2,opt,name=bpNumber,proto3" json:"bpNumber,omitempty"`
+	Maxblocksize         uint64   `protobuf:"varint,3,opt,name=maxblocksize,proto3" json:"maxblocksize,omitempty"`
+	Maxtokens            []byte   `protobuf:"bytes,4,opt,name=maxtokens,proto3" json:"maxtokens,omitempty"`
+	Stakingminimum       []byte   `protobuf:"bytes,5,opt,name=stakingminimum,proto3" json:"stakingminimum,omitempty"`
+	Totalstaking         []byte   `protobuf:"bytes,6,opt,name=totalstaking,proto3" json:"totalstaking,omitempty"`
+	Gasprice             []byte   `protobuf:"bytes,7,opt,name=gasprice,proto3" json:"gasprice,omitempty"`
+	Nameprice            []byte   `protobuf:"bytes,8,opt,name=nameprice,proto3" json:"nameprice,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ChainInfo) Reset()         { *m = ChainInfo{} }
+func (m *ChainInfo) String() string { return proto.CompactTextString(m) }
+func (*ChainInfo) ProtoMessage()    {}
+func (*ChainInfo) Descriptor() ([]byte, []int) {
+	return fileDescriptor_77a6da22d6a3feb1, []int{2}
+}
+
+func (m *ChainInfo) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ChainInfo.Unmarshal(m, b)
+}
+func (m *ChainInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ChainInfo.Marshal(b, m, deterministic)
+}
+func (m *ChainInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ChainInfo.Merge(m, src)
+}
+func (m *ChainInfo) XXX_Size() int {
+	return xxx_messageInfo_ChainInfo.Size(m)
+}
+func (m *ChainInfo) XXX_DiscardUnknown() {
+	xxx_messageInfo_ChainInfo.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ChainInfo proto.InternalMessageInfo
+
+func (m *ChainInfo) GetId() *ChainId {
+	if m != nil {
+		return m.Id
+	}
+	return nil
+}
+
+func (m *ChainInfo) GetBpNumber() uint32 {
+	if m != nil {
+		return m.BpNumber
+	}
+	return 0
+}
+
+func (m *ChainInfo) GetMaxblocksize() uint64 {
+	if m != nil {
+		return m.Maxblocksize
+	}
+	return 0
+}
+
+func (m *ChainInfo) GetMaxtokens() []byte {
+	if m != nil {
+		return m.Maxtokens
+	}
+	return nil
+}
+
+func (m *ChainInfo) GetStakingminimum() []byte {
+	if m != nil {
+		return m.Stakingminimum
+	}
+	return nil
+}
+
+func (m *ChainInfo) GetTotalstaking() []byte {
+	if m != nil {
+		return m.Totalstaking
+	}
+	return nil
+}
+
+func (m *ChainInfo) GetGasprice() []byte {
+	if m != nil {
+		return m.Gasprice
+	}
+	return nil
+}
+
+func (m *ChainInfo) GetNameprice() []byte {
+	if m != nil {
+		return m.Nameprice
+	}
+	return nil
+}
+
+// ChainStats corresponds to a chain statistics report.
+type ChainStats struct {
+	Report               string   `protobuf:"bytes,1,opt,name=report,proto3" json:"report,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ChainStats) Reset()         { *m = ChainStats{} }
+func (m *ChainStats) String() string { return proto.CompactTextString(m) }
+func (*ChainStats) ProtoMessage()    {}
+func (*ChainStats) Descriptor() ([]byte, []int) {
+	return fileDescriptor_77a6da22d6a3feb1, []int{3}
+}
+
+func (m *ChainStats) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ChainStats.Unmarshal(m, b)
+}
+func (m *ChainStats) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ChainStats.Marshal(b, m, deterministic)
+}
+func (m *ChainStats) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ChainStats.Merge(m, src)
+}
+func (m *ChainStats) XXX_Size() int {
+	return xxx_messageInfo_ChainStats.Size(m)
+}
+func (m *ChainStats) XXX_DiscardUnknown() {
+	xxx_messageInfo_ChainStats.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ChainStats proto.InternalMessageInfo
+
+func (m *ChainStats) GetReport() string {
+	if m != nil {
+		return m.Report
+	}
+	return ""
+}
+
 type Input struct {
 	Hash                 []byte   `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`
 	Address              [][]byte `protobuf:"bytes,2,rep,name=address,proto3" json:"address,omitempty"`
@@ -158,7 +373,7 @@ func (m *Input) Reset()         { *m = Input{} }
 func (m *Input) String() string { return proto.CompactTextString(m) }
 func (*Input) ProtoMessage()    {}
 func (*Input) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{1}
+	return fileDescriptor_77a6da22d6a3feb1, []int{4}
 }
 
 func (m *Input) XXX_Unmarshal(b []byte) error {
@@ -221,7 +436,7 @@ func (m *Output) Reset()         { *m = Output{} }
 func (m *Output) String() string { return proto.CompactTextString(m) }
 func (*Output) ProtoMessage()    {}
 func (*Output) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{2}
+	return fileDescriptor_77a6da22d6a3feb1, []int{5}
 }
 
 func (m *Output) XXX_Unmarshal(b []byte) error {
@@ -280,7 +495,7 @@ func (m *Empty) Reset()         { *m = Empty{} }
 func (m *Empty) String() string { return proto.CompactTextString(m) }
 func (*Empty) ProtoMessage()    {}
 func (*Empty) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{3}
+	return fileDescriptor_77a6da22d6a3feb1, []int{6}
 }
 
 func (m *Empty) XXX_Unmarshal(b []byte) error {
@@ -312,7 +527,7 @@ func (m *SingleBytes) Reset()         { *m = SingleBytes{} }
 func (m *SingleBytes) String() string { return proto.CompactTextString(m) }
 func (*SingleBytes) ProtoMessage()    {}
 func (*SingleBytes) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{4}
+	return fileDescriptor_77a6da22d6a3feb1, []int{7}
 }
 
 func (m *SingleBytes) XXX_Unmarshal(b []byte) error {
@@ -340,6 +555,45 @@ func (m *SingleBytes) GetValue() []byte {
 	return nil
 }
 
+type AccountAddress struct {
+	Value                []byte   `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *AccountAddress) Reset()         { *m = AccountAddress{} }
+func (m *AccountAddress) String() string { return proto.CompactTextString(m) }
+func (*AccountAddress) ProtoMessage()    {}
+func (*AccountAddress) Descriptor() ([]byte, []int) {
+	return fileDescriptor_77a6da22d6a3feb1, []int{8}
+}
+
+func (m *AccountAddress) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_AccountAddress.Unmarshal(m, b)
+}
+func (m *AccountAddress) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_AccountAddress.Marshal(b, m, deterministic)
+}
+func (m *AccountAddress) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AccountAddress.Merge(m, src)
+}
+func (m *AccountAddress) XXX_Size() int {
+	return xxx_messageInfo_AccountAddress.Size(m)
+}
+func (m *AccountAddress) XXX_DiscardUnknown() {
+	xxx_messageInfo_AccountAddress.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AccountAddress proto.InternalMessageInfo
+
+func (m *AccountAddress) GetValue() []byte {
+	if m != nil {
+		return m.Value
+	}
+	return nil
+}
+
 type AccountAndRoot struct {
 	Account              []byte   `protobuf:"bytes,1,opt,name=Account,proto3" json:"Account,omitempty"`
 	Root                 []byte   `protobuf:"bytes,2,opt,name=Root,proto3" json:"Root,omitempty"`
@@ -353,7 +607,7 @@ func (m *AccountAndRoot) Reset()         { *m = AccountAndRoot{} }
 func (m *AccountAndRoot) String() string { return proto.CompactTextString(m) }
 func (*AccountAndRoot) ProtoMessage()    {}
 func (*AccountAndRoot) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{5}
+	return fileDescriptor_77a6da22d6a3feb1, []int{9}
 }
 
 func (m *AccountAndRoot) XXX_Unmarshal(b []byte) error {
@@ -399,6 +653,10 @@ type Peer struct {
 	Address              *PeerAddress    `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
 	Bestblock            *NewBlockNotice `protobuf:"bytes,2,opt,name=bestblock,proto3" json:"bestblock,omitempty"`
 	State                int32           `protobuf:"varint,3,opt,name=state,proto3" json:"state,omitempty"`
+	Hidden               bool            `protobuf:"varint,4,opt,name=hidden,proto3" json:"hidden,omitempty"`
+	LashCheck            int64           `protobuf:"varint,5,opt,name=lashCheck,proto3" json:"lashCheck,omitempty"`
+	Selfpeer             bool            `protobuf:"varint,6,opt,name=selfpeer,proto3" json:"selfpeer,omitempty"`
+	Version              string          `protobuf:"bytes,7,opt,name=version,proto3" json:"version,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
 	XXX_sizecache        int32           `json:"-"`
@@ -408,7 +666,7 @@ func (m *Peer) Reset()         { *m = Peer{} }
 func (m *Peer) String() string { return proto.CompactTextString(m) }
 func (*Peer) ProtoMessage()    {}
 func (*Peer) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{6}
+	return fileDescriptor_77a6da22d6a3feb1, []int{10}
 }
 
 func (m *Peer) XXX_Unmarshal(b []byte) error {
@@ -450,6 +708,34 @@ func (m *Peer) GetState() int32 {
 	return 0
 }
 
+func (m *Peer) GetHidden() bool {
+	if m != nil {
+		return m.Hidden
+	}
+	return false
+}
+
+func (m *Peer) GetLashCheck() int64 {
+	if m != nil {
+		return m.LashCheck
+	}
+	return 0
+}
+
+func (m *Peer) GetSelfpeer() bool {
+	if m != nil {
+		return m.Selfpeer
+	}
+	return false
+}
+
+func (m *Peer) GetVersion() string {
+	if m != nil {
+		return m.Version
+	}
+	return ""
+}
+
 type PeerList struct {
 	Peers                []*Peer  `protobuf:"bytes,1,rep,name=peers,proto3" json:"peers,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -461,7 +747,7 @@ func (m *PeerList) Reset()         { *m = PeerList{} }
 func (m *PeerList) String() string { return proto.CompactTextString(m) }
 func (*PeerList) ProtoMessage()    {}
 func (*PeerList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{7}
+	return fileDescriptor_77a6da22d6a3feb1, []int{11}
 }
 
 func (m *PeerList) XXX_Unmarshal(b []byte) error {
@@ -504,7 +790,7 @@ func (m *ListParams) Reset()         { *m = ListParams{} }
 func (m *ListParams) String() string { return proto.CompactTextString(m) }
 func (*ListParams) ProtoMessage()    {}
 func (*ListParams) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{8}
+	return fileDescriptor_77a6da22d6a3feb1, []int{12}
 }
 
 func (m *ListParams) XXX_Unmarshal(b []byte) error {
@@ -560,6 +846,163 @@ func (m *ListParams) GetAsc() bool {
 	return false
 }
 
+type PageParams struct {
+	Offset               uint32   `protobuf:"varint,1,opt,name=offset,proto3" json:"offset,omitempty"`
+	Size                 uint32   `protobuf:"varint,2,opt,name=size,proto3" json:"size,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *PageParams) Reset()         { *m = PageParams{} }
+func (m *PageParams) String() string { return proto.CompactTextString(m) }
+func (*PageParams) ProtoMessage()    {}
+func (*PageParams) Descriptor() ([]byte, []int) {
+	return fileDescriptor_77a6da22d6a3feb1, []int{13}
+}
+
+func (m *PageParams) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_PageParams.Unmarshal(m, b)
+}
+func (m *PageParams) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_PageParams.Marshal(b, m, deterministic)
+}
+func (m *PageParams) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PageParams.Merge(m, src)
+}
+func (m *PageParams) XXX_Size() int {
+	return xxx_messageInfo_PageParams.Size(m)
+}
+func (m *PageParams) XXX_DiscardUnknown() {
+	xxx_messageInfo_PageParams.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_PageParams proto.InternalMessageInfo
+
+func (m *PageParams) GetOffset() uint32 {
+	if m != nil {
+		return m.Offset
+	}
+	return 0
+}
+
+func (m *PageParams) GetSize() uint32 {
+	if m != nil {
+		return m.Size
+	}
+	return 0
+}
+
+type BlockBodyPaged struct {
+	Total                uint32     `protobuf:"varint,1,opt,name=total,proto3" json:"total,omitempty"`
+	Offset               uint32     `protobuf:"varint,2,opt,name=offset,proto3" json:"offset,omitempty"`
+	Size                 uint32     `protobuf:"varint,3,opt,name=size,proto3" json:"size,omitempty"`
+	Body                 *BlockBody `protobuf:"bytes,4,opt,name=body,proto3" json:"body,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
+	XXX_unrecognized     []byte     `json:"-"`
+	XXX_sizecache        int32      `json:"-"`
+}
+
+func (m *BlockBodyPaged) Reset()         { *m = BlockBodyPaged{} }
+func (m *BlockBodyPaged) String() string { return proto.CompactTextString(m) }
+func (*BlockBodyPaged) ProtoMessage()    {}
+func (*BlockBodyPaged) Descriptor() ([]byte, []int) {
+	return fileDescriptor_77a6da22d6a3feb1, []int{14}
+}
+
+func (m *BlockBodyPaged) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_BlockBodyPaged.Unmarshal(m, b)
+}
+func (m *BlockBodyPaged) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_BlockBodyPaged.Marshal(b, m, deterministic)
+}
+func (m *BlockBodyPaged) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BlockBodyPaged.Merge(m, src)
+}
+func (m *BlockBodyPaged) XXX_Size() int {
+	return xxx_messageInfo_BlockBodyPaged.Size(m)
+}
+func (m *BlockBodyPaged) XXX_DiscardUnknown() {
+	xxx_messageInfo_BlockBodyPaged.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_BlockBodyPaged proto.InternalMessageInfo
+
+func (m *BlockBodyPaged) GetTotal() uint32 {
+	if m != nil {
+		return m.Total
+	}
+	return 0
+}
+
+func (m *BlockBodyPaged) GetOffset() uint32 {
+	if m != nil {
+		return m.Offset
+	}
+	return 0
+}
+
+func (m *BlockBodyPaged) GetSize() uint32 {
+	if m != nil {
+		return m.Size
+	}
+	return 0
+}
+
+func (m *BlockBodyPaged) GetBody() *BlockBody {
+	if m != nil {
+		return m.Body
+	}
+	return nil
+}
+
+type BlockBodyParams struct {
+	Hashornumber         []byte      `protobuf:"bytes,1,opt,name=hashornumber,proto3" json:"hashornumber,omitempty"`
+	Paging               *PageParams `protobuf:"bytes,2,opt,name=paging,proto3" json:"paging,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
+	XXX_unrecognized     []byte      `json:"-"`
+	XXX_sizecache        int32       `json:"-"`
+}
+
+func (m *BlockBodyParams) Reset()         { *m = BlockBodyParams{} }
+func (m *BlockBodyParams) String() string { return proto.CompactTextString(m) }
+func (*BlockBodyParams) ProtoMessage()    {}
+func (*BlockBodyParams) Descriptor() ([]byte, []int) {
+	return fileDescriptor_77a6da22d6a3feb1, []int{15}
+}
+
+func (m *BlockBodyParams) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_BlockBodyParams.Unmarshal(m, b)
+}
+func (m *BlockBodyParams) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_BlockBodyParams.Marshal(b, m, deterministic)
+}
+func (m *BlockBodyParams) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BlockBodyParams.Merge(m, src)
+}
+func (m *BlockBodyParams) XXX_Size() int {
+	return xxx_messageInfo_BlockBodyParams.Size(m)
+}
+func (m *BlockBodyParams) XXX_DiscardUnknown() {
+	xxx_messageInfo_BlockBodyParams.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_BlockBodyParams proto.InternalMessageInfo
+
+func (m *BlockBodyParams) GetHashornumber() []byte {
+	if m != nil {
+		return m.Hashornumber
+	}
+	return nil
+}
+
+func (m *BlockBodyParams) GetPaging() *PageParams {
+	if m != nil {
+		return m.Paging
+	}
+	return nil
+}
+
 type BlockHeaderList struct {
 	Blocks               []*Block `protobuf:"bytes,1,rep,name=blocks,proto3" json:"blocks,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -571,7 +1014,7 @@ func (m *BlockHeaderList) Reset()         { *m = BlockHeaderList{} }
 func (m *BlockHeaderList) String() string { return proto.CompactTextString(m) }
 func (*BlockHeaderList) ProtoMessage()    {}
 func (*BlockHeaderList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{9}
+	return fileDescriptor_77a6da22d6a3feb1, []int{16}
 }
 
 func (m *BlockHeaderList) XXX_Unmarshal(b []byte) error {
@@ -603,6 +1046,7 @@ type BlockMetadata struct {
 	Hash                 []byte       `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`
 	Header               *BlockHeader `protobuf:"bytes,2,opt,name=header,proto3" json:"header,omitempty"`
 	Txcount              int32        `protobuf:"varint,3,opt,name=txcount,proto3" json:"txcount,omitempty"`
+	Size                 int64        `protobuf:"varint,4,opt,name=size,proto3" json:"size,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
 	XXX_unrecognized     []byte       `json:"-"`
 	XXX_sizecache        int32        `json:"-"`
@@ -612,7 +1056,7 @@ func (m *BlockMetadata) Reset()         { *m = BlockMetadata{} }
 func (m *BlockMetadata) String() string { return proto.CompactTextString(m) }
 func (*BlockMetadata) ProtoMessage()    {}
 func (*BlockMetadata) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{10}
+	return fileDescriptor_77a6da22d6a3feb1, []int{17}
 }
 
 func (m *BlockMetadata) XXX_Unmarshal(b []byte) error {
@@ -654,6 +1098,13 @@ func (m *BlockMetadata) GetTxcount() int32 {
 	return 0
 }
 
+func (m *BlockMetadata) GetSize() int64 {
+	if m != nil {
+		return m.Size
+	}
+	return 0
+}
+
 type BlockMetadataList struct {
 	Blocks               []*BlockMetadata `protobuf:"bytes,1,rep,name=blocks,proto3" json:"blocks,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
@@ -665,7 +1116,7 @@ func (m *BlockMetadataList) Reset()         { *m = BlockMetadataList{} }
 func (m *BlockMetadataList) String() string { return proto.CompactTextString(m) }
 func (*BlockMetadataList) ProtoMessage()    {}
 func (*BlockMetadataList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{11}
+	return fileDescriptor_77a6da22d6a3feb1, []int{18}
 }
 
 func (m *BlockMetadataList) XXX_Unmarshal(b []byte) error {
@@ -706,7 +1157,7 @@ func (m *CommitResult) Reset()         { *m = CommitResult{} }
 func (m *CommitResult) String() string { return proto.CompactTextString(m) }
 func (*CommitResult) ProtoMessage()    {}
 func (*CommitResult) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{12}
+	return fileDescriptor_77a6da22d6a3feb1, []int{19}
 }
 
 func (m *CommitResult) XXX_Unmarshal(b []byte) error {
@@ -759,7 +1210,7 @@ func (m *CommitResultList) Reset()         { *m = CommitResultList{} }
 func (m *CommitResultList) String() string { return proto.CompactTextString(m) }
 func (*CommitResultList) ProtoMessage()    {}
 func (*CommitResultList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{13}
+	return fileDescriptor_77a6da22d6a3feb1, []int{20}
 }
 
 func (m *CommitResultList) XXX_Unmarshal(b []byte) error {
@@ -799,7 +1250,7 @@ func (m *VerifyResult) Reset()         { *m = VerifyResult{} }
 func (m *VerifyResult) String() string { return proto.CompactTextString(m) }
 func (*VerifyResult) ProtoMessage()    {}
 func (*VerifyResult) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{14}
+	return fileDescriptor_77a6da22d6a3feb1, []int{21}
 }
 
 func (m *VerifyResult) XXX_Unmarshal(b []byte) error {
@@ -846,7 +1297,7 @@ func (m *Personal) Reset()         { *m = Personal{} }
 func (m *Personal) String() string { return proto.CompactTextString(m) }
 func (*Personal) ProtoMessage()    {}
 func (*Personal) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{15}
+	return fileDescriptor_77a6da22d6a3feb1, []int{22}
 }
 
 func (m *Personal) XXX_Unmarshal(b []byte) error {
@@ -894,7 +1345,7 @@ func (m *ImportFormat) Reset()         { *m = ImportFormat{} }
 func (m *ImportFormat) String() string { return proto.CompactTextString(m) }
 func (*ImportFormat) ProtoMessage()    {}
 func (*ImportFormat) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{16}
+	return fileDescriptor_77a6da22d6a3feb1, []int{23}
 }
 
 func (m *ImportFormat) XXX_Unmarshal(b []byte) error {
@@ -948,7 +1399,7 @@ func (m *Staking) Reset()         { *m = Staking{} }
 func (m *Staking) String() string { return proto.CompactTextString(m) }
 func (*Staking) ProtoMessage()    {}
 func (*Staking) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{17}
+	return fileDescriptor_77a6da22d6a3feb1, []int{24}
 }
 
 func (m *Staking) XXX_Unmarshal(b []byte) error {
@@ -995,7 +1446,7 @@ func (m *Vote) Reset()         { *m = Vote{} }
 func (m *Vote) String() string { return proto.CompactTextString(m) }
 func (*Vote) ProtoMessage()    {}
 func (*Vote) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{18}
+	return fileDescriptor_77a6da22d6a3feb1, []int{25}
 }
 
 func (m *Vote) XXX_Unmarshal(b []byte) error {
@@ -1030,8 +1481,150 @@ func (m *Vote) GetAmount() []byte {
 	return nil
 }
 
+type VoteParams struct {
+	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Count                uint32   `protobuf:"varint,2,opt,name=count,proto3" json:"count,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *VoteParams) Reset()         { *m = VoteParams{} }
+func (m *VoteParams) String() string { return proto.CompactTextString(m) }
+func (*VoteParams) ProtoMessage()    {}
+func (*VoteParams) Descriptor() ([]byte, []int) {
+	return fileDescriptor_77a6da22d6a3feb1, []int{26}
+}
+
+func (m *VoteParams) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_VoteParams.Unmarshal(m, b)
+}
+func (m *VoteParams) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_VoteParams.Marshal(b, m, deterministic)
+}
+func (m *VoteParams) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VoteParams.Merge(m, src)
+}
+func (m *VoteParams) XXX_Size() int {
+	return xxx_messageInfo_VoteParams.Size(m)
+}
+func (m *VoteParams) XXX_DiscardUnknown() {
+	xxx_messageInfo_VoteParams.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_VoteParams proto.InternalMessageInfo
+
+func (m *VoteParams) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *VoteParams) GetCount() uint32 {
+	if m != nil {
+		return m.Count
+	}
+	return 0
+}
+
+type AccountVoteInfo struct {
+	Staking              *Staking    `protobuf:"bytes,1,opt,name=staking,proto3" json:"staking,omitempty"`
+	Voting               []*VoteInfo `protobuf:"bytes,2,rep,name=voting,proto3" json:"voting,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
+	XXX_unrecognized     []byte      `json:"-"`
+	XXX_sizecache        int32       `json:"-"`
+}
+
+func (m *AccountVoteInfo) Reset()         { *m = AccountVoteInfo{} }
+func (m *AccountVoteInfo) String() string { return proto.CompactTextString(m) }
+func (*AccountVoteInfo) ProtoMessage()    {}
+func (*AccountVoteInfo) Descriptor() ([]byte, []int) {
+	return fileDescriptor_77a6da22d6a3feb1, []int{27}
+}
+
+func (m *AccountVoteInfo) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_AccountVoteInfo.Unmarshal(m, b)
+}
+func (m *AccountVoteInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_AccountVoteInfo.Marshal(b, m, deterministic)
+}
+func (m *AccountVoteInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AccountVoteInfo.Merge(m, src)
+}
+func (m *AccountVoteInfo) XXX_Size() int {
+	return xxx_messageInfo_AccountVoteInfo.Size(m)
+}
+func (m *AccountVoteInfo) XXX_DiscardUnknown() {
+	xxx_messageInfo_AccountVoteInfo.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AccountVoteInfo proto.InternalMessageInfo
+
+func (m *AccountVoteInfo) GetStaking() *Staking {
+	if m != nil {
+		return m.Staking
+	}
+	return nil
+}
+
+func (m *AccountVoteInfo) GetVoting() []*VoteInfo {
+	if m != nil {
+		return m.Voting
+	}
+	return nil
+}
+
+type VoteInfo struct {
+	Id                   string   `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
+	Candidates           []string `protobuf:"bytes,3,rep,name=candidates,proto3" json:"candidates,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *VoteInfo) Reset()         { *m = VoteInfo{} }
+func (m *VoteInfo) String() string { return proto.CompactTextString(m) }
+func (*VoteInfo) ProtoMessage()    {}
+func (*VoteInfo) Descriptor() ([]byte, []int) {
+	return fileDescriptor_77a6da22d6a3feb1, []int{28}
+}
+
+func (m *VoteInfo) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_VoteInfo.Unmarshal(m, b)
+}
+func (m *VoteInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_VoteInfo.Marshal(b, m, deterministic)
+}
+func (m *VoteInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VoteInfo.Merge(m, src)
+}
+func (m *VoteInfo) XXX_Size() int {
+	return xxx_messageInfo_VoteInfo.Size(m)
+}
+func (m *VoteInfo) XXX_DiscardUnknown() {
+	xxx_messageInfo_VoteInfo.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_VoteInfo proto.InternalMessageInfo
+
+func (m *VoteInfo) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *VoteInfo) GetCandidates() []string {
+	if m != nil {
+		return m.Candidates
+	}
+	return nil
+}
+
 type VoteList struct {
 	Votes                []*Vote  `protobuf:"bytes,1,rep,name=votes,proto3" json:"votes,omitempty"`
+	Id                   string   `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -1041,7 +1634,7 @@ func (m *VoteList) Reset()         { *m = VoteList{} }
 func (m *VoteList) String() string { return proto.CompactTextString(m) }
 func (*VoteList) ProtoMessage()    {}
 func (*VoteList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{19}
+	return fileDescriptor_77a6da22d6a3feb1, []int{29}
 }
 
 func (m *VoteList) XXX_Unmarshal(b []byte) error {
@@ -1069,6 +1662,13 @@ func (m *VoteList) GetVotes() []*Vote {
 	return nil
 }
 
+func (m *VoteList) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
 type NodeReq struct {
 	Timeout              []byte   `protobuf:"bytes,1,opt,name=timeout,proto3" json:"timeout,omitempty"`
 	Component            []byte   `protobuf:"bytes,2,opt,name=component,proto3" json:"component,omitempty"`
@@ -1081,7 +1681,7 @@ func (m *NodeReq) Reset()         { *m = NodeReq{} }
 func (m *NodeReq) String() string { return proto.CompactTextString(m) }
 func (*NodeReq) ProtoMessage()    {}
 func (*NodeReq) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{20}
+	return fileDescriptor_77a6da22d6a3feb1, []int{30}
 }
 
 func (m *NodeReq) XXX_Unmarshal(b []byte) error {
@@ -1118,6 +1718,7 @@ func (m *NodeReq) GetComponent() []byte {
 
 type Name struct {
 	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	BlockNo              uint64   `protobuf:"varint,2,opt,name=blockNo,proto3" json:"blockNo,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -1127,7 +1728,7 @@ func (m *Name) Reset()         { *m = Name{} }
 func (m *Name) String() string { return proto.CompactTextString(m) }
 func (*Name) ProtoMessage()    {}
 func (*Name) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{21}
+	return fileDescriptor_77a6da22d6a3feb1, []int{31}
 }
 
 func (m *Name) XXX_Unmarshal(b []byte) error {
@@ -1155,9 +1756,17 @@ func (m *Name) GetName() string {
 	return ""
 }
 
+func (m *Name) GetBlockNo() uint64 {
+	if m != nil {
+		return m.BlockNo
+	}
+	return 0
+}
+
 type NameInfo struct {
 	Name                 *Name    `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Owner                []byte   `protobuf:"bytes,2,opt,name=owner,proto3" json:"owner,omitempty"`
+	Destination          []byte   `protobuf:"bytes,3,opt,name=destination,proto3" json:"destination,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -1167,7 +1776,7 @@ func (m *NameInfo) Reset()         { *m = NameInfo{} }
 func (m *NameInfo) String() string { return proto.CompactTextString(m) }
 func (*NameInfo) ProtoMessage()    {}
 func (*NameInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_77a6da22d6a3feb1, []int{22}
+	return fileDescriptor_77a6da22d6a3feb1, []int{32}
 }
 
 func (m *NameInfo) XXX_Unmarshal(b []byte) error {
@@ -1202,18 +1811,299 @@ func (m *NameInfo) GetOwner() []byte {
 	return nil
 }
 
+func (m *NameInfo) GetDestination() []byte {
+	if m != nil {
+		return m.Destination
+	}
+	return nil
+}
+
+type PeersParams struct {
+	NoHidden             bool     `protobuf:"varint,1,opt,name=noHidden,proto3" json:"noHidden,omitempty"`
+	ShowSelf             bool     `protobuf:"varint,2,opt,name=showSelf,proto3" json:"showSelf,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *PeersParams) Reset()         { *m = PeersParams{} }
+func (m *PeersParams) String() string { return proto.CompactTextString(m) }
+func (*PeersParams) ProtoMessage()    {}
+func (*PeersParams) Descriptor() ([]byte, []int) {
+	return fileDescriptor_77a6da22d6a3feb1, []int{33}
+}
+
+func (m *PeersParams) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_PeersParams.Unmarshal(m, b)
+}
+func (m *PeersParams) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_PeersParams.Marshal(b, m, deterministic)
+}
+func (m *PeersParams) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PeersParams.Merge(m, src)
+}
+func (m *PeersParams) XXX_Size() int {
+	return xxx_messageInfo_PeersParams.Size(m)
+}
+func (m *PeersParams) XXX_DiscardUnknown() {
+	xxx_messageInfo_PeersParams.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_PeersParams proto.InternalMessageInfo
+
+func (m *PeersParams) GetNoHidden() bool {
+	if m != nil {
+		return m.NoHidden
+	}
+	return false
+}
+
+func (m *PeersParams) GetShowSelf() bool {
+	if m != nil {
+		return m.ShowSelf
+	}
+	return false
+}
+
+type KeyParams struct {
+	Key                  []string `protobuf:"bytes,1,rep,name=key,proto3" json:"key,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *KeyParams) Reset()         { *m = KeyParams{} }
+func (m *KeyParams) String() string { return proto.CompactTextString(m) }
+func (*KeyParams) ProtoMessage()    {}
+func (*KeyParams) Descriptor() ([]byte, []int) {
+	return fileDescriptor_77a6da22d6a3feb1, []int{34}
+}
+
+func (m *KeyParams) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_KeyParams.Unmarshal(m, b)
+}
+func (m *KeyParams) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_KeyParams.Marshal(b, m, deterministic)
+}
+func (m *KeyParams) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_KeyParams.Merge(m, src)
+}
+func (m *KeyParams) XXX_Size() int {
+	return xxx_messageInfo_KeyParams.Size(m)
+}
+func (m *KeyParams) XXX_DiscardUnknown() {
+	xxx_messageInfo_KeyParams.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_KeyParams proto.InternalMessageInfo
+
+func (m *KeyParams) GetKey() []string {
+	if m != nil {
+		return m.Key
+	}
+	return nil
+}
+
+type ServerInfo struct {
+	Status               map[string]string      `protobuf:"bytes,1,rep,name=status,proto3" json:"status,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	Config               map[string]*ConfigItem `protobuf:"bytes,2,rep,name=config,proto3" json:"config,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
+}
+
+func (m *ServerInfo) Reset()         { *m = ServerInfo{} }
+func (m *ServerInfo) String() string { return proto.CompactTextString(m) }
+func (*ServerInfo) ProtoMessage()    {}
+func (*ServerInfo) Descriptor() ([]byte, []int) {
+	return fileDescriptor_77a6da22d6a3feb1, []int{35}
+}
+
+func (m *ServerInfo) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ServerInfo.Unmarshal(m, b)
+}
+func (m *ServerInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ServerInfo.Marshal(b, m, deterministic)
+}
+func (m *ServerInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ServerInfo.Merge(m, src)
+}
+func (m *ServerInfo) XXX_Size() int {
+	return xxx_messageInfo_ServerInfo.Size(m)
+}
+func (m *ServerInfo) XXX_DiscardUnknown() {
+	xxx_messageInfo_ServerInfo.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ServerInfo proto.InternalMessageInfo
+
+func (m *ServerInfo) GetStatus() map[string]string {
+	if m != nil {
+		return m.Status
+	}
+	return nil
+}
+
+func (m *ServerInfo) GetConfig() map[string]*ConfigItem {
+	if m != nil {
+		return m.Config
+	}
+	return nil
+}
+
+type ConfigItem struct {
+	Props                map[string]string `protobuf:"bytes,2,rep,name=props,proto3" json:"props,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+	XXX_unrecognized     []byte            `json:"-"`
+	XXX_sizecache        int32             `json:"-"`
+}
+
+func (m *ConfigItem) Reset()         { *m = ConfigItem{} }
+func (m *ConfigItem) String() string { return proto.CompactTextString(m) }
+func (*ConfigItem) ProtoMessage()    {}
+func (*ConfigItem) Descriptor() ([]byte, []int) {
+	return fileDescriptor_77a6da22d6a3feb1, []int{36}
+}
+
+func (m *ConfigItem) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ConfigItem.Unmarshal(m, b)
+}
+func (m *ConfigItem) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ConfigItem.Marshal(b, m, deterministic)
+}
+func (m *ConfigItem) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ConfigItem.Merge(m, src)
+}
+func (m *ConfigItem) XXX_Size() int {
+	return xxx_messageInfo_ConfigItem.Size(m)
+}
+func (m *ConfigItem) XXX_DiscardUnknown() {
+	xxx_messageInfo_ConfigItem.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ConfigItem proto.InternalMessageInfo
+
+func (m *ConfigItem) GetProps() map[string]string {
+	if m != nil {
+		return m.Props
+	}
+	return nil
+}
+
+type EventList struct {
+	Events               []*Event `protobuf:"bytes,1,rep,name=events,proto3" json:"events,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *EventList) Reset()         { *m = EventList{} }
+func (m *EventList) String() string { return proto.CompactTextString(m) }
+func (*EventList) ProtoMessage()    {}
+func (*EventList) Descriptor() ([]byte, []int) {
+	return fileDescriptor_77a6da22d6a3feb1, []int{37}
+}
+
+func (m *EventList) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_EventList.Unmarshal(m, b)
+}
+func (m *EventList) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_EventList.Marshal(b, m, deterministic)
+}
+func (m *EventList) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EventList.Merge(m, src)
+}
+func (m *EventList) XXX_Size() int {
+	return xxx_messageInfo_EventList.Size(m)
+}
+func (m *EventList) XXX_DiscardUnknown() {
+	xxx_messageInfo_EventList.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EventList proto.InternalMessageInfo
+
+func (m *EventList) GetEvents() []*Event {
+	if m != nil {
+		return m.Events
+	}
+	return nil
+}
+
+// info and bps is json string
+type ConsensusInfo struct {
+	Type                 string   `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
+	Info                 string   `protobuf:"bytes,2,opt,name=info,proto3" json:"info,omitempty"`
+	Bps                  []string `protobuf:"bytes,3,rep,name=bps,proto3" json:"bps,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ConsensusInfo) Reset()         { *m = ConsensusInfo{} }
+func (m *ConsensusInfo) String() string { return proto.CompactTextString(m) }
+func (*ConsensusInfo) ProtoMessage()    {}
+func (*ConsensusInfo) Descriptor() ([]byte, []int) {
+	return fileDescriptor_77a6da22d6a3feb1, []int{38}
+}
+
+func (m *ConsensusInfo) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ConsensusInfo.Unmarshal(m, b)
+}
+func (m *ConsensusInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ConsensusInfo.Marshal(b, m, deterministic)
+}
+func (m *ConsensusInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ConsensusInfo.Merge(m, src)
+}
+func (m *ConsensusInfo) XXX_Size() int {
+	return xxx_messageInfo_ConsensusInfo.Size(m)
+}
+func (m *ConsensusInfo) XXX_DiscardUnknown() {
+	xxx_messageInfo_ConsensusInfo.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ConsensusInfo proto.InternalMessageInfo
+
+func (m *ConsensusInfo) GetType() string {
+	if m != nil {
+		return m.Type
+	}
+	return ""
+}
+
+func (m *ConsensusInfo) GetInfo() string {
+	if m != nil {
+		return m.Info
+	}
+	return ""
+}
+
+func (m *ConsensusInfo) GetBps() []string {
+	if m != nil {
+		return m.Bps
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterEnum("types.CommitStatus", CommitStatus_name, CommitStatus_value)
 	proto.RegisterEnum("types.VerifyStatus", VerifyStatus_name, VerifyStatus_value)
 	proto.RegisterType((*BlockchainStatus)(nil), "types.BlockchainStatus")
+	proto.RegisterType((*ChainId)(nil), "types.ChainId")
+	proto.RegisterType((*ChainInfo)(nil), "types.ChainInfo")
+	proto.RegisterType((*ChainStats)(nil), "types.ChainStats")
 	proto.RegisterType((*Input)(nil), "types.Input")
 	proto.RegisterType((*Output)(nil), "types.Output")
 	proto.RegisterType((*Empty)(nil), "types.Empty")
 	proto.RegisterType((*SingleBytes)(nil), "types.SingleBytes")
+	proto.RegisterType((*AccountAddress)(nil), "types.AccountAddress")
 	proto.RegisterType((*AccountAndRoot)(nil), "types.AccountAndRoot")
 	proto.RegisterType((*Peer)(nil), "types.Peer")
 	proto.RegisterType((*PeerList)(nil), "types.PeerList")
 	proto.RegisterType((*ListParams)(nil), "types.ListParams")
+	proto.RegisterType((*PageParams)(nil), "types.PageParams")
+	proto.RegisterType((*BlockBodyPaged)(nil), "types.BlockBodyPaged")
+	proto.RegisterType((*BlockBodyParams)(nil), "types.BlockBodyParams")
 	proto.RegisterType((*BlockHeaderList)(nil), "types.BlockHeaderList")
 	proto.RegisterType((*BlockMetadata)(nil), "types.BlockMetadata")
 	proto.RegisterType((*BlockMetadataList)(nil), "types.BlockMetadataList")
@@ -1224,111 +2114,180 @@ func init() {
 	proto.RegisterType((*ImportFormat)(nil), "types.ImportFormat")
 	proto.RegisterType((*Staking)(nil), "types.Staking")
 	proto.RegisterType((*Vote)(nil), "types.Vote")
+	proto.RegisterType((*VoteParams)(nil), "types.VoteParams")
+	proto.RegisterType((*AccountVoteInfo)(nil), "types.AccountVoteInfo")
+	proto.RegisterType((*VoteInfo)(nil), "types.VoteInfo")
 	proto.RegisterType((*VoteList)(nil), "types.VoteList")
 	proto.RegisterType((*NodeReq)(nil), "types.NodeReq")
 	proto.RegisterType((*Name)(nil), "types.Name")
 	proto.RegisterType((*NameInfo)(nil), "types.NameInfo")
+	proto.RegisterType((*PeersParams)(nil), "types.PeersParams")
+	proto.RegisterType((*KeyParams)(nil), "types.KeyParams")
+	proto.RegisterType((*ServerInfo)(nil), "types.ServerInfo")
+	proto.RegisterMapType((map[string]*ConfigItem)(nil), "types.ServerInfo.ConfigEntry")
+	proto.RegisterMapType((map[string]string)(nil), "types.ServerInfo.StatusEntry")
+	proto.RegisterType((*ConfigItem)(nil), "types.ConfigItem")
+	proto.RegisterMapType((map[string]string)(nil), "types.ConfigItem.PropsEntry")
+	proto.RegisterType((*EventList)(nil), "types.EventList")
+	proto.RegisterType((*ConsensusInfo)(nil), "types.ConsensusInfo")
 }
 
 func init() { proto.RegisterFile("rpc.proto", fileDescriptor_77a6da22d6a3feb1) }
 
 var fileDescriptor_77a6da22d6a3feb1 = []byte{
-	// 1511 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x57, 0x7b, 0x73, 0xda, 0xc6,
-	0x16, 0x07, 0xdb, 0x60, 0x73, 0x00, 0x23, 0x6f, 0x1c, 0x87, 0xcb, 0xcd, 0x24, 0xbe, 0x7b, 0x3b,
-	0x1d, 0x37, 0x4d, 0x9c, 0x84, 0x34, 0xed, 0x3f, 0x9d, 0x76, 0x64, 0x82, 0x6d, 0xa6, 0x36, 0xb8,
-	0x2b, 0xc5, 0x25, 0xed, 0x4c, 0x35, 0x32, 0x2c, 0x46, 0x13, 0xd0, 0x12, 0x69, 0xf1, 0xa3, 0xff,
-	0xf4, 0x43, 0xf5, 0x9b, 0xf4, 0x13, 0x75, 0xf6, 0x21, 0x21, 0x61, 0x25, 0x33, 0xe9, 0x5f, 0xe8,
-	0x9c, 0xf3, 0x3b, 0x8f, 0xdd, 0xf3, 0x5a, 0xa0, 0x14, 0xcc, 0x06, 0xfb, 0xb3, 0x80, 0x71, 0x86,
-	0x0a, 0xfc, 0x76, 0x46, 0xc3, 0x86, 0x71, 0x31, 0x61, 0x83, 0xf7, 0x83, 0xb1, 0xeb, 0xf9, 0x4a,
-	0xd0, 0xa8, 0xba, 0x83, 0x01, 0x9b, 0xfb, 0x5c, 0x93, 0xe0, 0xb3, 0x21, 0xd5, 0xdf, 0xa5, 0x59,
-	0x73, 0xa6, 0x3f, 0x2b, 0x53, 0xca, 0x03, 0x4f, 0x1b, 0xc3, 0xbf, 0x81, 0x71, 0x10, 0xdb, 0xb1,
-	0xb8, 0xcb, 0xe7, 0x21, 0xfa, 0x12, 0x6a, 0x17, 0x34, 0xe4, 0x8e, 0x74, 0xe0, 0x8c, 0xdd, 0x70,
-	0x5c, 0xcf, 0xef, 0xe6, 0xf7, 0x2a, 0xa4, 0x2a, 0xd8, 0x12, 0x7e, 0xec, 0x86, 0x63, 0xf4, 0x18,
-	0xca, 0x12, 0x37, 0xa6, 0xde, 0xe5, 0x98, 0xd7, 0x57, 0x76, 0xf3, 0x7b, 0x6b, 0x04, 0x04, 0xeb,
-	0x58, 0x72, 0xf0, 0x00, 0x0a, 0x1d, 0x7f, 0x36, 0xe7, 0x08, 0xc1, 0x5a, 0xc2, 0x8c, 0xfc, 0x46,
-	0x75, 0x58, 0x77, 0x87, 0xc3, 0x80, 0x86, 0x61, 0x7d, 0x65, 0x77, 0x75, 0xaf, 0x42, 0x22, 0x12,
-	0x6d, 0x43, 0xe1, 0xca, 0x9d, 0xcc, 0x69, 0x7d, 0x55, 0xc2, 0x15, 0x81, 0x76, 0xa0, 0x18, 0x0e,
-	0x02, 0x6f, 0xc6, 0xeb, 0x6b, 0x92, 0xad, 0x29, 0x3c, 0x82, 0x62, 0x6f, 0xce, 0x85, 0x97, 0x6d,
-	0x28, 0x78, 0xfe, 0x90, 0xde, 0x48, 0x37, 0x55, 0xa2, 0x88, 0xb4, 0x9f, 0xfc, 0xbf, 0xf7, 0xb3,
-	0x0e, 0x85, 0xf6, 0x74, 0xc6, 0x6f, 0xf1, 0xff, 0xa1, 0x6c, 0x79, 0xfe, 0xe5, 0x84, 0x1e, 0xdc,
-	0x72, 0x9a, 0xb0, 0x92, 0x4f, 0x58, 0xc1, 0xbf, 0xc3, 0xa6, 0xa9, 0xb2, 0x61, 0xfa, 0x43, 0xc2,
-	0x18, 0x17, 0x71, 0x68, 0x8e, 0x46, 0x46, 0xa4, 0xb8, 0x1d, 0x81, 0xd0, 0xe1, 0xc9, 0x6f, 0xf4,
-	0x08, 0xa0, 0xc5, 0xa6, 0x33, 0x11, 0x27, 0x1d, 0xca, 0x00, 0x37, 0x48, 0x82, 0x83, 0xff, 0x84,
-	0xb5, 0x33, 0x4a, 0x03, 0xf4, 0x74, 0x71, 0x3a, 0x61, 0xb5, 0xdc, 0x44, 0xfb, 0xb2, 0x3c, 0xf6,
-	0x85, 0xd4, 0x54, 0x92, 0xc5, 0x89, 0x5f, 0x41, 0x49, 0xa4, 0x47, 0x26, 0x56, 0xba, 0x2b, 0x37,
-	0xef, 0x6b, 0x7c, 0x97, 0x5e, 0xcb, 0xcc, 0x76, 0x19, 0xf7, 0x06, 0x94, 0x2c, 0x70, 0xe2, 0x80,
-	0x21, 0x77, 0xb9, 0xba, 0xa6, 0x02, 0x51, 0x04, 0x7e, 0x06, 0x1b, 0xc2, 0xc5, 0x89, 0x17, 0x72,
-	0xf4, 0x3f, 0x28, 0xcc, 0x28, 0x0d, 0x44, 0x08, 0xab, 0x7b, 0xe5, 0x66, 0x39, 0x11, 0x02, 0x51,
-	0x12, 0x7c, 0x05, 0x20, 0xa0, 0x67, 0x6e, 0xe0, 0x4e, 0xc3, 0xcc, 0x7a, 0xd8, 0x81, 0x62, 0xaa,
-	0x90, 0x34, 0x25, 0xb0, 0xa1, 0xf7, 0x87, 0xf2, 0x5e, 0x25, 0xf2, 0x5b, 0x60, 0xd9, 0x68, 0x14,
-	0x52, 0x95, 0xa3, 0x2a, 0xd1, 0x14, 0x32, 0x60, 0xd5, 0x0d, 0x07, 0xf5, 0x82, 0xbc, 0x2e, 0xf1,
-	0x89, 0xbf, 0x83, 0x9a, 0x2a, 0x58, 0xea, 0x0e, 0x75, 0xb4, 0x5f, 0x40, 0x51, 0x1e, 0x2c, 0x0a,
-	0xb7, 0xa2, 0xc3, 0x95, 0x38, 0xa2, 0x65, 0xd8, 0x83, 0xaa, 0x64, 0x9c, 0x52, 0xee, 0x0e, 0x5d,
-	0xee, 0x66, 0xc6, 0xfc, 0x44, 0xc4, 0x2c, 0x0c, 0xeb, 0xcb, 0x44, 0x49, 0x53, 0xca, 0x25, 0xd1,
-	0x08, 0x91, 0x7f, 0x7e, 0xa3, 0xf2, 0xaf, 0x2e, 0x32, 0x22, 0xb1, 0x09, 0x5b, 0x29, 0x57, 0x32,
-	0xca, 0xa7, 0x4b, 0x51, 0x6e, 0x27, 0x4d, 0x47, 0xc8, 0x38, 0x5a, 0x0a, 0x95, 0x16, 0x9b, 0x4e,
-	0x3d, 0x4e, 0x68, 0x38, 0x9f, 0x64, 0x37, 0xdc, 0x57, 0x50, 0xa0, 0x41, 0xc0, 0x54, 0xac, 0x9b,
-	0xcd, 0x7b, 0xda, 0xa0, 0xd2, 0x53, 0xad, 0x4f, 0x14, 0x42, 0xdc, 0xef, 0x90, 0x72, 0xd7, 0x9b,
-	0xc8, 0x50, 0x4b, 0x44, 0x53, 0xd8, 0x04, 0x23, 0xe9, 0x46, 0x06, 0xfa, 0x0c, 0xd6, 0x03, 0x49,
-	0x45, 0x91, 0xa6, 0x0d, 0x2b, 0x24, 0x89, 0x30, 0xd8, 0x86, 0xca, 0x39, 0x0d, 0xbc, 0xd1, 0xad,
-	0x8e, 0xf4, 0x3f, 0xb0, 0xc2, 0x6f, 0x74, 0xed, 0x96, 0xb4, 0xa6, 0x7d, 0x43, 0x56, 0xf8, 0xcd,
-	0xc7, 0x02, 0x56, 0xea, 0xa9, 0x80, 0xb1, 0x2d, 0xaa, 0x31, 0x08, 0x99, 0xef, 0x4e, 0x44, 0xeb,
-	0xcc, 0xdc, 0x30, 0x9c, 0x8d, 0x03, 0x37, 0x54, 0x5d, 0x59, 0x22, 0x09, 0x0e, 0xda, 0x83, 0x75,
-	0x3d, 0x28, 0x75, 0xd6, 0x36, 0xb5, 0x61, 0xdd, 0x8f, 0x24, 0x12, 0xe3, 0x31, 0x54, 0x3a, 0xd3,
-	0x19, 0x0b, 0xf8, 0x21, 0x0b, 0xa6, 0xae, 0xa8, 0x9c, 0xd5, 0x6b, 0x6f, 0xb4, 0xd4, 0x68, 0x89,
-	0x59, 0x40, 0x84, 0x58, 0x24, 0x9a, 0x4d, 0x86, 0xc2, 0xa1, 0xb4, 0x5f, 0x22, 0x11, 0x29, 0x24,
-	0x3e, 0xbd, 0x96, 0x12, 0x75, 0xaf, 0x11, 0x89, 0x5f, 0xc3, 0xba, 0xc5, 0xdd, 0xf7, 0x9e, 0x7f,
-	0x29, 0xee, 0xde, 0x9d, 0x26, 0xc6, 0x84, 0xa6, 0x44, 0x4a, 0xaf, 0xc7, 0xd4, 0xd7, 0xdd, 0x21,
-	0xbf, 0xf1, 0xf7, 0xb0, 0x76, 0xce, 0x38, 0x45, 0x0f, 0xa1, 0x34, 0x70, 0xfd, 0xa1, 0x37, 0x14,
-	0x6d, 0xaa, 0xd4, 0x16, 0x8c, 0x84, 0xc5, 0x95, 0xa4, 0x45, 0xd1, 0xc2, 0x42, 0x3b, 0x6a, 0xe1,
-	0x2b, 0xc6, 0xe9, 0x72, 0x0b, 0x0b, 0x39, 0x51, 0x12, 0x6c, 0xc2, 0x7a, 0x97, 0x0d, 0x29, 0xa1,
-	0x1f, 0x64, 0x2d, 0x7b, 0x53, 0xca, 0xe6, 0xf1, 0x2c, 0xd3, 0xa4, 0x8c, 0x84, 0x4d, 0x67, 0xcc,
-	0xa7, 0xb1, 0xbb, 0x05, 0x03, 0x37, 0x60, 0xad, 0xeb, 0x4e, 0xa9, 0x38, 0x8b, 0xef, 0x4e, 0xa3,
-	0xe4, 0xc8, 0x6f, 0x6c, 0xc2, 0x86, 0x90, 0x75, 0xfc, 0x11, 0x43, 0x8f, 0x13, 0xf2, 0x45, 0x30,
-	0x42, 0xac, 0xc0, 0x62, 0x26, 0xb1, 0x6b, 0x5f, 0xf7, 0x5d, 0x85, 0x28, 0xe2, 0xc9, 0xdf, 0xf9,
-	0xa8, 0x0d, 0xf4, 0x26, 0x2b, 0x41, 0xc1, 0xee, 0x3b, 0xbd, 0x9f, 0x8c, 0x1c, 0xda, 0x06, 0xc3,
-	0xee, 0x3b, 0xdd, 0x5e, 0xb7, 0xd5, 0x76, 0xec, 0x5e, 0xcf, 0x39, 0xe9, 0xfd, 0x62, 0xe4, 0xd1,
-	0x7d, 0xd8, 0xb2, 0xfb, 0x8e, 0x79, 0x42, 0xda, 0xe6, 0x9b, 0x77, 0x4e, 0xbb, 0xdf, 0xb1, 0x6c,
-	0xcb, 0x58, 0x41, 0xf7, 0xa0, 0x66, 0xf7, 0x9d, 0x4e, 0xf7, 0xdc, 0x3c, 0xe9, 0xbc, 0x71, 0x8e,
-	0x4d, 0xeb, 0xd8, 0x58, 0x5d, 0x62, 0x5a, 0x9d, 0xa3, 0xae, 0xb1, 0xa6, 0x0d, 0x44, 0xcc, 0xc3,
-	0x1e, 0x39, 0x35, 0x6d, 0xa3, 0x80, 0xfe, 0x0b, 0x0f, 0x24, 0xdb, 0x7a, 0x7b, 0x78, 0xd8, 0x69,
-	0x75, 0xda, 0x5d, 0xdb, 0x39, 0x30, 0x4f, 0xcc, 0x6e, 0xab, 0x6d, 0x14, 0xb5, 0xce, 0xb1, 0x69,
-	0x39, 0x96, 0x79, 0xda, 0x56, 0x31, 0x19, 0xeb, 0xb1, 0x29, 0xbb, 0x4d, 0xba, 0xe6, 0x89, 0xd3,
-	0x26, 0xa4, 0x47, 0x8c, 0xd2, 0x93, 0x51, 0xd4, 0x30, 0xfa, 0x4c, 0xdb, 0x60, 0x9c, 0xb7, 0x49,
-	0xe7, 0xf0, 0x9d, 0x63, 0xd9, 0xa6, 0xfd, 0xd6, 0x52, 0xc7, 0xdb, 0x85, 0x87, 0x69, 0xae, 0x88,
-	0xcf, 0xe9, 0xf6, 0x6c, 0xe7, 0xd4, 0xb4, 0x5b, 0xc7, 0x46, 0x1e, 0x3d, 0x82, 0x46, 0x1a, 0x91,
-	0x3a, 0xde, 0x4a, 0xf3, 0xaf, 0x0a, 0xd4, 0x4c, 0x1a, 0x5c, 0x32, 0x72, 0xd6, 0xb2, 0x68, 0x70,
-	0xe5, 0x0d, 0x28, 0x7a, 0x09, 0x25, 0x91, 0x72, 0xe1, 0x99, 0xa2, 0xa8, 0x4d, 0x74, 0x11, 0x34,
-	0x32, 0x1a, 0x00, 0xe7, 0xd0, 0x4b, 0x28, 0x9e, 0xca, 0x07, 0x06, 0x8a, 0x36, 0x8b, 0x22, 0x43,
-	0x42, 0x3f, 0xcc, 0x69, 0xc8, 0x1b, 0x9b, 0x69, 0x36, 0xce, 0xa1, 0xd7, 0x00, 0x8b, 0x37, 0x08,
-	0x8a, 0xc6, 0xb1, 0x5c, 0xb6, 0x8d, 0x07, 0xc9, 0xb1, 0x97, 0x78, 0xa4, 0xe0, 0x1c, 0xfa, 0x11,
-	0x0c, 0x51, 0xba, 0x89, 0x59, 0x1b, 0xa2, 0x2d, 0x0d, 0x5f, 0xec, 0x9a, 0xc6, 0xce, 0xdd, 0x99,
-	0x2c, 0xa4, 0x38, 0x87, 0x0e, 0x60, 0x2b, 0x36, 0x10, 0x8f, 0xf9, 0x0c, 0x0b, 0xf5, 0xac, 0xd1,
-	0xab, 0x6d, 0xbc, 0x84, 0x5a, 0x6c, 0xc3, 0xe2, 0x01, 0x75, 0xa7, 0x4b, 0x07, 0x48, 0x6d, 0x17,
-	0x9c, 0x7b, 0x91, 0x47, 0x26, 0x3c, 0xb8, 0xe3, 0x36, 0x53, 0x35, 0x73, 0xe4, 0x4b, 0x13, 0xfb,
-	0xb0, 0x71, 0x44, 0x95, 0x05, 0x94, 0x91, 0x86, 0x65, 0xa7, 0x68, 0x0f, 0x0a, 0x47, 0x94, 0xdb,
-	0xfd, 0x4c, 0xf0, 0x62, 0xea, 0xe2, 0x1c, 0xfa, 0x06, 0x20, 0xb2, 0xfc, 0x11, 0xb8, 0x11, 0xc3,
-	0x3b, 0x7e, 0x64, 0xbf, 0x29, 0xb5, 0x08, 0x1d, 0x50, 0x6f, 0xc6, 0x33, 0xb5, 0xa2, 0xac, 0x6b,
-	0x0c, 0xce, 0x89, 0xdd, 0x79, 0x44, 0xb9, 0x79, 0xd0, 0xc9, 0xc4, 0x43, 0x34, 0x93, 0x0f, 0x3a,
-	0x0a, 0x6b, 0x51, 0x7f, 0x68, 0xf7, 0xd1, 0x22, 0xd8, 0x46, 0xd6, 0x9e, 0xc1, 0xa2, 0x13, 0x8a,
-	0x96, 0x77, 0xe9, 0xa7, 0xb1, 0xa9, 0x33, 0x3e, 0x85, 0x0d, 0xd5, 0x51, 0xd9, 0xf6, 0x92, 0xeb,
-	0x49, 0xde, 0xc8, 0x86, 0xf2, 0x60, 0xf7, 0x51, 0x35, 0x46, 0x8b, 0x0c, 0xc6, 0xc5, 0xb9, 0xbc,
-	0x13, 0x71, 0x4e, 0x67, 0x48, 0x35, 0xce, 0xa7, 0x32, 0x24, 0x11, 0x38, 0x87, 0x7e, 0x00, 0x23,
-	0xc2, 0x9b, 0xfe, 0xf0, 0x2c, 0x60, 0x6c, 0x14, 0x37, 0x50, 0xfa, 0x21, 0xd9, 0xd8, 0x4a, 0xaa,
-	0x4a, 0xa4, 0xcc, 0x40, 0xb5, 0x15, 0x50, 0xa1, 0xad, 0x1f, 0x95, 0xb5, 0xf8, 0x11, 0xa6, 0xd6,
-	0x62, 0x63, 0x69, 0xcb, 0xc9, 0xda, 0x2d, 0x8b, 0x0c, 0x28, 0x3a, 0x5c, 0x2a, 0x3e, 0x94, 0x86,
-	0xeb, 0x63, 0xbd, 0x80, 0xf2, 0x09, 0x1b, 0xbc, 0xff, 0x0c, 0x27, 0x4d, 0xa8, 0xbe, 0xf5, 0x27,
-	0x9f, 0xa7, 0xf3, 0x2d, 0x54, 0xd5, 0xde, 0x8d, 0x74, 0xa2, 0xd4, 0x24, 0xb7, 0x71, 0xb6, 0x5e,
-	0xfb, 0x26, 0xa9, 0x77, 0xc7, 0x57, 0xf6, 0xcc, 0x7a, 0x05, 0xd5, 0x9f, 0xe7, 0x34, 0xb8, 0x6d,
-	0x31, 0x9f, 0x07, 0xee, 0x80, 0xc7, 0x57, 0x21, 0xb9, 0x1f, 0x51, 0x32, 0x01, 0xa5, 0x94, 0x54,
-	0xae, 0x53, 0xc9, 0x51, 0xea, 0x3b, 0x77, 0x58, 0x51, 0xd2, 0xbe, 0x96, 0x45, 0x22, 0x9e, 0xc9,
-	0xcb, 0xb7, 0x5f, 0x4b, 0x3c, 0xa1, 0xe3, 0x49, 0x23, 0xc0, 0x62, 0x21, 0x87, 0x99, 0x15, 0x55,
-	0x4b, 0xac, 0x6c, 0xad, 0xa2, 0xda, 0x32, 0x7a, 0x58, 0x7c, 0xaa, 0x2d, 0x35, 0x06, 0xe7, 0xd0,
-	0x33, 0x59, 0x14, 0xf1, 0x26, 0x4e, 0xee, 0xde, 0xd8, 0x45, 0x24, 0xc5, 0xb9, 0x83, 0xdd, 0x5f,
-	0x1f, 0x5d, 0x7a, 0x7c, 0x3c, 0xbf, 0xd8, 0x1f, 0xb0, 0xe9, 0x73, 0x57, 0xec, 0x0f, 0x8f, 0xa9,
-	0xdf, 0xe7, 0x12, 0x7c, 0x51, 0x94, 0x7f, 0x34, 0x5f, 0xfd, 0x13, 0x00, 0x00, 0xff, 0xff, 0xaf,
-	0x99, 0x26, 0xfe, 0xc2, 0x0e, 0x00, 0x00,
+	// 2423 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x39, 0xeb, 0x76, 0x22, 0xc7,
+	0xd1, 0x80, 0x04, 0x82, 0x02, 0xa4, 0x51, 0x5b, 0xde, 0xd5, 0xc7, 0xb7, 0x5e, 0x2b, 0x1d, 0xc7,
+	0x96, 0x1d, 0x5b, 0xf6, 0x6a, 0x6d, 0xc7, 0xf1, 0x49, 0xe2, 0x20, 0x8c, 0x56, 0x1c, 0x4b, 0x48,
+	0x69, 0xf0, 0x46, 0xce, 0x8f, 0x90, 0x11, 0xd3, 0xc0, 0x1c, 0x31, 0x17, 0xcf, 0x34, 0xba, 0xf8,
+	0x9c, 0xfc, 0xca, 0x03, 0x24, 0x6f, 0x92, 0x77, 0xc9, 0x6b, 0xe4, 0x25, 0x72, 0xba, 0xba, 0x7b,
+	0x2e, 0x08, 0xe5, 0x9c, 0xcd, 0x2f, 0x4d, 0x55, 0xd7, 0xbd, 0xaa, 0xab, 0xaa, 0x11, 0xd4, 0xa2,
+	0x70, 0x7c, 0x10, 0x46, 0x81, 0x08, 0x48, 0x59, 0xdc, 0x87, 0x3c, 0x6e, 0x59, 0x57, 0xf3, 0x60,
+	0x7c, 0x3d, 0x9e, 0xd9, 0xae, 0xaf, 0x0e, 0x5a, 0x4d, 0x7b, 0x3c, 0x0e, 0x16, 0xbe, 0xd0, 0x20,
+	0xf8, 0x81, 0xc3, 0xf5, 0x77, 0x2d, 0x3c, 0x0c, 0xf5, 0x67, 0xc3, 0xe3, 0x22, 0x72, 0xc7, 0x86,
+	0x28, 0xb2, 0x27, 0x9a, 0x81, 0xfe, 0xb3, 0x08, 0xd6, 0x51, 0x22, 0x74, 0x20, 0x6c, 0xb1, 0x88,
+	0xc9, 0xfb, 0xb0, 0x75, 0xc5, 0x63, 0x31, 0x42, 0x6d, 0xa3, 0x99, 0x1d, 0xcf, 0x76, 0x8b, 0x7b,
+	0xc5, 0xfd, 0x06, 0x6b, 0x4a, 0x34, 0x92, 0x9f, 0xd8, 0xf1, 0x8c, 0xbc, 0x0b, 0x75, 0xa4, 0x9b,
+	0x71, 0x77, 0x3a, 0x13, 0xbb, 0xa5, 0xbd, 0xe2, 0xfe, 0x3a, 0x03, 0x89, 0x3a, 0x41, 0x0c, 0xf9,
+	0x05, 0x6c, 0x8e, 0x03, 0x3f, 0xe6, 0x7e, 0xbc, 0x88, 0x47, 0xae, 0x3f, 0x09, 0x76, 0xd7, 0xf6,
+	0x8a, 0xfb, 0x35, 0xd6, 0x4c, 0xb0, 0x3d, 0x7f, 0x12, 0x90, 0x5f, 0x02, 0x41, 0x39, 0x68, 0xc3,
+	0xc8, 0x75, 0x94, 0xca, 0x75, 0x54, 0x89, 0x96, 0x74, 0xe4, 0x41, 0xcf, 0x91, 0x4a, 0x69, 0x00,
+	0x1b, 0x1a, 0x24, 0x3b, 0x50, 0xf6, 0xec, 0xa9, 0x3b, 0x46, 0xeb, 0x6a, 0x4c, 0x01, 0xe4, 0x09,
+	0x54, 0xc2, 0xc5, 0xd5, 0xdc, 0x1d, 0xa3, 0x41, 0x55, 0xa6, 0x21, 0xb2, 0x0b, 0x1b, 0x9e, 0xed,
+	0xfa, 0x3e, 0x17, 0x68, 0x45, 0x95, 0x19, 0x90, 0x3c, 0x83, 0x5a, 0x62, 0x10, 0xaa, 0xad, 0xb1,
+	0x14, 0x41, 0xff, 0x5e, 0x82, 0x9a, 0xd2, 0x28, 0x6d, 0x7d, 0x0e, 0x25, 0xd7, 0x41, 0x85, 0xf5,
+	0xc3, 0xcd, 0x03, 0x4c, 0xcb, 0x81, 0xb6, 0x87, 0x95, 0x5c, 0x87, 0xb4, 0xa0, 0x7a, 0x15, 0xf6,
+	0x17, 0xde, 0x15, 0x8f, 0x50, 0x7f, 0x93, 0x25, 0x30, 0xa1, 0xd0, 0xf0, 0xec, 0x3b, 0x8c, 0x6a,
+	0xec, 0xfe, 0xc4, 0xd1, 0x8c, 0x75, 0x96, 0xc3, 0x49, 0x5b, 0x3c, 0xfb, 0x4e, 0x04, 0xd7, 0xdc,
+	0x8f, 0x75, 0x08, 0x52, 0x04, 0x79, 0x1f, 0x36, 0x63, 0x61, 0x5f, 0xbb, 0xfe, 0xd4, 0x73, 0x7d,
+	0xd7, 0x5b, 0x78, 0xbb, 0x65, 0x24, 0x59, 0xc2, 0x4a, 0x4d, 0x22, 0x10, 0xf6, 0x5c, 0xa3, 0x77,
+	0x2b, 0x48, 0x95, 0xc3, 0x49, 0x4b, 0xa7, 0x76, 0x1c, 0x46, 0xee, 0x98, 0xef, 0x6e, 0xe0, 0x79,
+	0x02, 0x4b, 0x2b, 0x7c, 0xdb, 0xe3, 0xea, 0xb0, 0xaa, 0xac, 0x48, 0x10, 0xf4, 0x3d, 0x80, 0x8e,
+	0x29, 0x97, 0x58, 0xc6, 0x3b, 0xe2, 0x61, 0x10, 0x09, 0x9d, 0x06, 0x0d, 0xd1, 0x31, 0x94, 0x7b,
+	0x7e, 0xb8, 0x10, 0x84, 0xc0, 0x7a, 0xa6, 0x86, 0xf0, 0x5b, 0x26, 0xc3, 0x76, 0x9c, 0x88, 0xc7,
+	0xf1, 0x6e, 0x69, 0x6f, 0x6d, 0xbf, 0xc1, 0x0c, 0x28, 0x93, 0x7a, 0x63, 0xcf, 0x17, 0x2a, 0x3a,
+	0x0d, 0xa6, 0x00, 0xa9, 0x24, 0x1e, 0x47, 0x6e, 0x28, 0x74, 0x4c, 0x34, 0x44, 0x27, 0x50, 0x39,
+	0x5f, 0x08, 0xa9, 0x65, 0x07, 0xca, 0xae, 0xef, 0xf0, 0x3b, 0x54, 0xd3, 0x64, 0x0a, 0xc8, 0xeb,
+	0x29, 0xfe, 0xef, 0x7a, 0x36, 0xa0, 0xdc, 0xf5, 0x42, 0x71, 0x4f, 0x7f, 0x0e, 0xf5, 0x81, 0xeb,
+	0x4f, 0xe7, 0xfc, 0xe8, 0x5e, 0xf0, 0x8c, 0x94, 0x62, 0x46, 0x0a, 0x7d, 0x1f, 0x36, 0xdb, 0xea,
+	0x5e, 0xb6, 0x97, 0xb5, 0xe5, 0xe8, 0xfe, 0x9c, 0xd2, 0xf9, 0x0e, 0x0b, 0x02, 0x21, 0xed, 0xd5,
+	0x18, 0x4d, 0x69, 0x40, 0x19, 0x45, 0x49, 0xa1, 0xdd, 0xc0, 0x6f, 0xf2, 0x1c, 0xa0, 0x13, 0x78,
+	0xa1, 0xd4, 0xc0, 0x1d, 0x5d, 0xd5, 0x19, 0x0c, 0xfd, 0x77, 0x11, 0xd6, 0x2f, 0x38, 0x8f, 0xc8,
+	0xc7, 0x69, 0x18, 0x54, 0xe9, 0x12, 0x5d, 0xba, 0xf2, 0x54, 0xdb, 0x98, 0x86, 0xe6, 0x25, 0xd4,
+	0xe4, 0xad, 0xc3, 0xa2, 0x44, 0x7d, 0xf5, 0xc3, 0xb7, 0x35, 0x7d, 0x9f, 0xdf, 0xe2, 0xfd, 0xef,
+	0x07, 0xc2, 0x1d, 0x73, 0x96, 0xd2, 0x49, 0x0f, 0x63, 0x61, 0x0b, 0x15, 0xcf, 0x32, 0x53, 0x80,
+	0x8c, 0xe7, 0xcc, 0x75, 0x1c, 0xee, 0x63, 0x3c, 0xab, 0x4c, 0x43, 0xb2, 0xc0, 0xe6, 0x76, 0x3c,
+	0xeb, 0xcc, 0xf8, 0xf8, 0x1a, 0x6b, 0x78, 0x8d, 0xa5, 0x08, 0x59, 0x9a, 0x31, 0x9f, 0x4f, 0x42,
+	0xce, 0x23, 0x2c, 0xdd, 0x2a, 0x4b, 0x60, 0x19, 0xa1, 0x1b, 0x1e, 0xc5, 0x6e, 0xe0, 0x63, 0xd5,
+	0xd6, 0x98, 0x01, 0xe9, 0x27, 0x50, 0x95, 0xee, 0x9c, 0xba, 0xb1, 0x20, 0x3f, 0x83, 0xb2, 0xa4,
+	0x96, 0xee, 0xae, 0xed, 0xd7, 0x0f, 0xeb, 0x19, 0x77, 0x99, 0x3a, 0xa1, 0x37, 0x00, 0x92, 0xf4,
+	0xc2, 0x8e, 0x6c, 0x2f, 0x5e, 0x59, 0xa4, 0xd2, 0xf8, 0x6c, 0x6b, 0xd3, 0x90, 0xa4, 0x4d, 0xee,
+	0x6f, 0x93, 0xe1, 0xb7, 0xa4, 0x0d, 0x26, 0x93, 0x98, 0xab, 0xc2, 0x69, 0x32, 0x0d, 0x11, 0x0b,
+	0xd6, 0xec, 0x78, 0x8c, 0x2e, 0x56, 0x99, 0xfc, 0xa4, 0x5f, 0x01, 0x5c, 0xd8, 0x53, 0xae, 0xf5,
+	0xa6, 0x7c, 0xc5, 0x1c, 0x9f, 0xd1, 0x51, 0x4a, 0x75, 0xd0, 0x3b, 0xd8, 0xc4, 0xe0, 0x1f, 0x05,
+	0xce, 0xbd, 0x14, 0x81, 0x1d, 0x10, 0xef, 0xb4, 0x29, 0x7a, 0x04, 0x32, 0x32, 0x4b, 0x2b, 0x65,
+	0x66, 0xed, 0x7e, 0x0f, 0xd6, 0xaf, 0x02, 0xe7, 0x1e, 0xad, 0xae, 0x1f, 0x5a, 0x3a, 0x4e, 0x89,
+	0x1a, 0x86, 0xa7, 0xf4, 0x2f, 0xb0, 0x95, 0xd1, 0x8c, 0x86, 0x53, 0x68, 0xc8, 0x20, 0x05, 0x91,
+	0xaf, 0x9a, 0x9d, 0x0a, 0x5c, 0x0e, 0x47, 0x3e, 0x84, 0x4a, 0x68, 0x4f, 0x65, 0x03, 0x52, 0x55,
+	0xb4, 0x6d, 0xd2, 0x90, 0xf8, 0xcf, 0x34, 0x01, 0xfd, 0x95, 0xd6, 0x70, 0xc2, 0x6d, 0x47, 0xe7,
+	0xf0, 0x3d, 0xa8, 0xa8, 0xbe, 0xa8, 0x93, 0xd8, 0xc8, 0x1a, 0xc7, 0xf4, 0x19, 0xfd, 0x2b, 0x34,
+	0x11, 0x71, 0xc6, 0x85, 0xed, 0xd8, 0xc2, 0x5e, 0x99, 0xc9, 0x8f, 0x64, 0x26, 0xa5, 0x60, 0x6d,
+	0x08, 0xc9, 0x8a, 0x52, 0x2a, 0x99, 0xa6, 0x90, 0x05, 0x26, 0xee, 0xd4, 0x15, 0x54, 0xa5, 0x6c,
+	0xc0, 0x24, 0x7e, 0xeb, 0x58, 0xaf, 0x2a, 0x27, 0x6d, 0xd8, 0xce, 0xa9, 0x47, 0xcb, 0x3f, 0x5e,
+	0xb2, 0x7c, 0x27, 0xab, 0xce, 0x50, 0x26, 0x1e, 0x70, 0x68, 0x74, 0x02, 0xcf, 0x73, 0x05, 0xe3,
+	0xf1, 0x62, 0xbe, 0xba, 0x5f, 0x7e, 0x08, 0x65, 0x1e, 0x45, 0x81, 0xb2, 0x7f, 0xf3, 0xf0, 0x2d,
+	0x33, 0x79, 0x90, 0x4f, 0x8d, 0x6d, 0xa6, 0x28, 0x64, 0xf6, 0x1d, 0x2e, 0x6c, 0x77, 0xae, 0x87,
+	0xad, 0x86, 0x68, 0x1b, 0xac, 0xac, 0x1a, 0x34, 0xf4, 0x13, 0xd8, 0x88, 0x10, 0x32, 0x96, 0xe6,
+	0x05, 0x2b, 0x4a, 0x66, 0x68, 0xe8, 0x10, 0x1a, 0xaf, 0x79, 0xe4, 0x4e, 0xee, 0xb5, 0xa5, 0xff,
+	0x07, 0x25, 0x71, 0xa7, 0x3b, 0x4a, 0x4d, 0x73, 0x0e, 0xef, 0x58, 0x49, 0xdc, 0x3d, 0x66, 0xb0,
+	0x62, 0xcf, 0x19, 0x4c, 0x87, 0xf2, 0xde, 0x46, 0x71, 0xe0, 0xdb, 0x73, 0xd9, 0xd1, 0x42, 0x3b,
+	0x8e, 0xc3, 0x59, 0x64, 0xc7, 0x5c, 0x0f, 0x94, 0x0c, 0x86, 0xec, 0xc3, 0x86, 0xde, 0x78, 0x74,
+	0x26, 0xcd, 0x0c, 0xd6, 0x6d, 0x92, 0x99, 0x63, 0x3a, 0x83, 0x46, 0xcf, 0x93, 0x83, 0xe8, 0x38,
+	0x88, 0x3c, 0x5b, 0x56, 0xd3, 0xda, 0xad, 0x3b, 0x59, 0x6a, 0x7f, 0x99, 0x56, 0xce, 0xe4, 0xb1,
+	0x4c, 0x7e, 0x30, 0x77, 0xa4, 0x42, 0x94, 0x5f, 0x63, 0x06, 0x94, 0x27, 0x3e, 0xbf, 0xc5, 0x13,
+	0x15, 0x57, 0x03, 0xd2, 0x2f, 0x60, 0x63, 0xa0, 0x67, 0xea, 0x13, 0xa8, 0xd8, 0x5e, 0xa6, 0x7b,
+	0x6b, 0x48, 0xa6, 0xf4, 0x76, 0xc6, 0x7d, 0xdd, 0x47, 0xf0, 0x9b, 0xfe, 0x06, 0xd6, 0x5f, 0x07,
+	0x02, 0x67, 0xed, 0xd8, 0xf6, 0x1d, 0xd7, 0x91, 0xcd, 0x53, 0xb1, 0xa5, 0x88, 0x8c, 0xc4, 0x52,
+	0x56, 0x22, 0x3d, 0x04, 0x90, 0xdc, 0xfa, 0x32, 0x6e, 0x26, 0x5b, 0x49, 0x0d, 0xb7, 0x90, 0x1d,
+	0x28, 0xa7, 0x41, 0x6a, 0x32, 0x05, 0x50, 0x07, 0xb6, 0x74, 0x98, 0x24, 0x2b, 0xae, 0x33, 0xfb,
+	0xb0, 0x61, 0x76, 0x84, 0xfc, 0x4e, 0xa3, 0x3d, 0x62, 0xe6, 0x98, 0x7c, 0x00, 0x95, 0x9b, 0x40,
+	0xa8, 0xbb, 0x2c, 0x2b, 0x65, 0xcb, 0x64, 0x54, 0x8b, 0x62, 0xfa, 0x98, 0x7e, 0x0d, 0xd5, 0x44,
+	0xbc, 0xb2, 0xab, 0x94, 0xd8, 0xf5, 0x1c, 0x20, 0x71, 0x4d, 0xc6, 0x71, 0x4d, 0xa6, 0x37, 0xc5,
+	0xd0, 0xdf, 0x2a, 0x5e, 0xd3, 0xc2, 0x6f, 0x02, 0x49, 0x96, 0x6f, 0xe1, 0xf2, 0x9c, 0xa9, 0x93,
+	0x65, 0xf1, 0xb4, 0x0d, 0x1b, 0xfd, 0xc0, 0xe1, 0x8c, 0xff, 0x88, 0xb7, 0xd8, 0xf5, 0x78, 0xb0,
+	0x48, 0x06, 0xa9, 0x06, 0xd5, 0xb6, 0xe7, 0x85, 0x81, 0xcf, 0x93, 0xa0, 0xa6, 0x08, 0xfa, 0x39,
+	0xac, 0xf7, 0x6d, 0x8f, 0xcb, 0x8c, 0xc9, 0x85, 0x47, 0xc7, 0x14, 0xbf, 0xa5, 0xcc, 0x2b, 0x35,
+	0xfc, 0x74, 0x22, 0x0d, 0x48, 0xc7, 0x50, 0x95, 0x5c, 0xe8, 0xf3, 0xbb, 0x19, 0xce, 0xd4, 0x6c,
+	0x79, 0xac, 0xc5, 0xec, 0x40, 0x39, 0xb8, 0xf5, 0x75, 0x2f, 0x6a, 0x30, 0x05, 0x90, 0x3d, 0xa8,
+	0x3b, 0x3c, 0x16, 0xae, 0x6f, 0x0b, 0x39, 0xdb, 0xd4, 0x56, 0x92, 0x45, 0xd1, 0x2e, 0xd4, 0xe5,
+	0xfc, 0x8a, 0x75, 0xce, 0x5b, 0x50, 0xf5, 0x83, 0x13, 0x35, 0x5c, 0x8b, 0x6a, 0x48, 0x1a, 0x18,
+	0x07, 0xe8, 0x2c, 0xb8, 0x1d, 0xf0, 0xf9, 0x44, 0x6f, 0xc1, 0x09, 0x4c, 0xdf, 0x81, 0xda, 0x77,
+	0xdc, 0x74, 0x71, 0x0b, 0xd6, 0xae, 0xf9, 0x3d, 0x86, 0xb8, 0xc6, 0xe4, 0x27, 0xfd, 0x5b, 0x09,
+	0x60, 0xc0, 0xa3, 0x1b, 0x1e, 0xa1, 0x37, 0x5f, 0x40, 0x25, 0xc6, 0xdb, 0xaa, 0xd3, 0xf0, 0x8e,
+	0xa9, 0x8f, 0x84, 0xe4, 0x40, 0xdd, 0xe6, 0xae, 0x2f, 0xa2, 0x7b, 0xa6, 0x89, 0x25, 0xdb, 0x38,
+	0xf0, 0x27, 0xae, 0xa9, 0x96, 0x15, 0x6c, 0x1d, 0x3c, 0xd7, 0x6c, 0x8a, 0xb8, 0xf5, 0x6b, 0xa8,
+	0x67, 0xa4, 0xa5, 0xd6, 0x15, 0xb5, 0x75, 0xe9, 0x1e, 0xa5, 0x92, 0xae, 0x80, 0xaf, 0x4b, 0x5f,
+	0x15, 0x5b, 0xa7, 0x50, 0xcf, 0x48, 0x5c, 0xc1, 0xfa, 0x41, 0x96, 0x35, 0x9d, 0x45, 0x8a, 0xa9,
+	0x27, 0xb8, 0x97, 0x91, 0x46, 0x7f, 0x92, 0x9b, 0x95, 0x39, 0x20, 0x87, 0x50, 0x0e, 0xa3, 0x20,
+	0x8c, 0xb5, 0x33, 0xcf, 0x1e, 0xb0, 0x1e, 0x5c, 0xc8, 0x63, 0xe5, 0x8b, 0x22, 0x6d, 0xc9, 0x31,
+	0x9f, 0x20, 0xdf, 0xc4, 0x13, 0xfa, 0x02, 0x6a, 0xdd, 0x1b, 0xee, 0x0b, 0x33, 0x04, 0xb9, 0x04,
+	0x96, 0x87, 0x20, 0x52, 0x30, 0x7d, 0x46, 0x7b, 0xd0, 0xec, 0xe4, 0x9e, 0x54, 0x04, 0xd6, 0x25,
+	0x9d, 0x29, 0x5f, 0xf9, 0x2d, 0x71, 0xf8, 0x06, 0x53, 0x0a, 0xf1, 0x5b, 0xda, 0x75, 0x15, 0x9a,
+	0x9b, 0x28, 0x3f, 0x3f, 0xfa, 0x57, 0xd1, 0x8c, 0x23, 0xfd, 0x1a, 0xac, 0x41, 0x79, 0x78, 0x39,
+	0x3a, 0xff, 0xce, 0x2a, 0x90, 0x1d, 0xb0, 0x86, 0x97, 0xa3, 0xfe, 0x79, 0xbf, 0xd3, 0x1d, 0x0d,
+	0xcf, 0xcf, 0x47, 0xa7, 0xe7, 0x7f, 0xb4, 0x8a, 0xe4, 0x6d, 0xd8, 0x1e, 0x5e, 0x8e, 0xda, 0xa7,
+	0xac, 0xdb, 0xfe, 0xf6, 0x87, 0x51, 0xf7, 0xb2, 0x37, 0x18, 0x0e, 0xac, 0x12, 0x79, 0x0b, 0xb6,
+	0x86, 0x97, 0xa3, 0x5e, 0xff, 0x75, 0xfb, 0xb4, 0xf7, 0xed, 0xe8, 0xa4, 0x3d, 0x38, 0xb1, 0xd6,
+	0x96, 0x90, 0x83, 0xde, 0xab, 0xbe, 0xb5, 0xae, 0x05, 0x18, 0xe4, 0xf1, 0x39, 0x3b, 0x6b, 0x0f,
+	0xad, 0x32, 0xf9, 0x7f, 0x78, 0x8a, 0xe8, 0xc1, 0xf7, 0xc7, 0xc7, 0xbd, 0x4e, 0xaf, 0xdb, 0x1f,
+	0x8e, 0x8e, 0xda, 0xa7, 0xed, 0x7e, 0xa7, 0x6b, 0x55, 0x34, 0xcf, 0x49, 0x7b, 0x30, 0x1a, 0xb4,
+	0xcf, 0xba, 0xca, 0x26, 0x6b, 0x23, 0x11, 0x35, 0xec, 0xb2, 0x7e, 0xfb, 0x74, 0xd4, 0x65, 0xec,
+	0x9c, 0x59, 0xb5, 0x8f, 0x26, 0x66, 0x70, 0x69, 0x9f, 0x76, 0xc0, 0x7a, 0xdd, 0x65, 0xbd, 0xe3,
+	0x1f, 0x46, 0x83, 0x61, 0x7b, 0xf8, 0xfd, 0x40, 0xb9, 0xb7, 0x07, 0xcf, 0xf2, 0x58, 0x69, 0xdf,
+	0xa8, 0x7f, 0x3e, 0x1c, 0x9d, 0xb5, 0x87, 0x9d, 0x13, 0xab, 0x48, 0x9e, 0x43, 0x2b, 0x4f, 0x91,
+	0x73, 0xaf, 0x74, 0xf8, 0x8f, 0x6d, 0xd8, 0x6a, 0xf3, 0x68, 0x1a, 0xb0, 0x8b, 0x8e, 0x2c, 0x75,
+	0xf9, 0x96, 0x7a, 0x01, 0x35, 0xd9, 0x94, 0x06, 0xb8, 0x0f, 0x9b, 0xf6, 0xaa, 0xdb, 0x54, 0x6b,
+	0xc5, 0x20, 0xa2, 0x05, 0xf2, 0x02, 0x2a, 0x67, 0xf8, 0x62, 0x27, 0x66, 0xef, 0x56, 0x60, 0xcc,
+	0xf8, 0x8f, 0x0b, 0x1e, 0x8b, 0xd6, 0x66, 0x1e, 0x4d, 0x0b, 0xe4, 0x0b, 0x80, 0xf4, 0x1d, 0x4f,
+	0x92, 0x2a, 0x91, 0x6f, 0x96, 0xd6, 0xd3, 0xec, 0xfa, 0x91, 0x79, 0xe8, 0xd3, 0x02, 0xf9, 0x0c,
+	0x1a, 0xaf, 0xb8, 0x48, 0x9f, 0xb7, 0x79, 0x46, 0x2b, 0xf7, 0xc0, 0xf5, 0x27, 0x01, 0x2d, 0x90,
+	0x03, 0xfd, 0x1a, 0x96, 0x22, 0x96, 0xc8, 0xb7, 0xb3, 0xe4, 0xf8, 0x38, 0xa4, 0x05, 0xf2, 0x0d,
+	0x58, 0xb2, 0x90, 0x33, 0x9b, 0x56, 0x4c, 0x0c, 0x61, 0xba, 0x7f, 0xb7, 0x9e, 0x3c, 0xdc, 0xc8,
+	0xe4, 0x29, 0x2d, 0x90, 0x23, 0xd8, 0x4e, 0x04, 0x24, 0x4b, 0xde, 0x0a, 0x09, 0xbb, 0xab, 0x96,
+	0x2c, 0x2d, 0xe3, 0x05, 0x6c, 0x25, 0x32, 0x06, 0x22, 0xe2, 0xb6, 0xb7, 0x64, 0x7a, 0x6e, 0xb7,
+	0xa4, 0x85, 0xcf, 0x8a, 0xa4, 0x0d, 0x4f, 0x1f, 0xa8, 0x5d, 0xc9, 0xba, 0x72, 0xb9, 0x43, 0x11,
+	0x07, 0x50, 0x7d, 0xc5, 0x95, 0x04, 0xb2, 0x22, 0xd1, 0xcb, 0x4a, 0xc9, 0xef, 0xc0, 0x32, 0xf4,
+	0xe9, 0x36, 0xbb, 0x82, 0xef, 0x11, 0x8d, 0xe4, 0x1b, 0x4c, 0x66, 0xb2, 0xa8, 0x93, 0x27, 0xcb,
+	0xdb, 0xbc, 0x8e, 0xd4, 0xdb, 0x0f, 0xf1, 0x53, 0xee, 0xd0, 0x02, 0xd9, 0x87, 0xf2, 0x2b, 0x2e,
+	0x86, 0x97, 0x2b, 0xb5, 0xa6, 0x0b, 0x1e, 0x2d, 0x90, 0xcf, 0x01, 0x8c, 0xaa, 0x47, 0xc8, 0xad,
+	0x84, 0xbc, 0xe7, 0x1b, 0x07, 0x0f, 0x91, 0x8b, 0xf1, 0x31, 0x77, 0x43, 0xb1, 0x92, 0xcb, 0x14,
+	0xb6, 0xa6, 0xa1, 0x05, 0xb9, 0xba, 0xbf, 0xe2, 0xa2, 0x7d, 0xd4, 0x5b, 0x49, 0x0f, 0x66, 0xfd,
+	0x3b, 0xea, 0x29, 0xda, 0x01, 0xf7, 0x9d, 0xe1, 0x25, 0x49, 0x8d, 0x6d, 0xad, 0x5a, 0x69, 0xa9,
+	0xbc, 0xec, 0x95, 0x81, 0x3b, 0xf5, 0xf3, 0xb4, 0x39, 0x1f, 0x3f, 0x86, 0xaa, 0x6a, 0x1a, 0xab,
+	0xe5, 0x65, 0x37, 0x61, 0x8c, 0x48, 0x55, 0x69, 0x18, 0x5e, 0x92, 0x66, 0x42, 0x2d, 0x4b, 0x28,
+	0xb9, 0x7f, 0xcb, 0xeb, 0x37, 0xde, 0x26, 0x59, 0x22, 0xaa, 0x37, 0xfc, 0xb7, 0x12, 0x41, 0x0a,
+	0x5a, 0x20, 0xbf, 0xc7, 0x12, 0x41, 0xa8, 0xed, 0x3b, 0x17, 0x51, 0x10, 0x4c, 0x92, 0x1e, 0x91,
+	0xff, 0x29, 0x21, 0xb1, 0x53, 0xa3, 0x91, 0x16, 0x73, 0xd0, 0xec, 0x44, 0x5c, 0xf2, 0xeb, 0x1f,
+	0x16, 0xb6, 0x92, 0xb7, 0xb1, 0xda, 0xc1, 0x5b, 0x4b, 0x2b, 0x35, 0x5e, 0x9f, 0xba, 0xcc, 0x81,
+	0x82, 0xe3, 0xa5, 0xfa, 0x27, 0x79, 0x72, 0xed, 0xd8, 0x67, 0x50, 0x3f, 0x0d, 0xc6, 0xd7, 0x6f,
+	0xa0, 0xe4, 0x10, 0x9a, 0xdf, 0xfb, 0xf3, 0x37, 0xe3, 0xf9, 0x12, 0x9a, 0x6a, 0xc9, 0x37, 0x3c,
+	0xc6, 0xe9, 0xec, 0xea, 0xbf, 0x9a, 0xaf, 0x7b, 0x97, 0xe5, 0x7b, 0xa0, 0x6b, 0x75, 0x63, 0x7e,
+	0x09, 0xcd, 0x3f, 0x2c, 0x78, 0x74, 0xdf, 0x09, 0x7c, 0x11, 0xd9, 0xe3, 0xb4, 0x01, 0x22, 0xf6,
+	0x11, 0xa6, 0x36, 0x90, 0x1c, 0x93, 0xca, 0xf6, 0x76, 0x36, 0xb3, 0x8a, 0xfd, 0xc9, 0x03, 0x94,
+	0x49, 0xda, 0x0b, 0x2c, 0x13, 0xdc, 0xfe, 0x48, 0xf6, 0xa7, 0x1b, 0xbd, 0x0b, 0xb6, 0xb6, 0x32,
+	0xb8, 0x24, 0x01, 0x92, 0xe5, 0x35, 0xee, 0xc9, 0xdb, 0x99, 0xdd, 0x79, 0x89, 0xc3, 0xac, 0xdb,
+	0xd8, 0x68, 0xb7, 0xd2, 0x2c, 0x2b, 0xc6, 0xe5, 0xd2, 0x52, 0x3f, 0x10, 0x25, 0x86, 0x2e, 0xbd,
+	0x26, 0xd4, 0x18, 0x52, 0xf5, 0x89, 0x6f, 0x86, 0x47, 0xd8, 0x97, 0xde, 0x18, 0xb4, 0x40, 0x3e,
+	0xc1, 0x02, 0x4b, 0x56, 0xe8, 0xec, 0xd2, 0x9c, 0x58, 0x6a, 0x4e, 0x31, 0x7d, 0xd8, 0xce, 0x71,
+	0x07, 0xd2, 0x3d, 0xd9, 0xb8, 0x78, 0xec, 0xce, 0x85, 0x5a, 0x30, 0x5b, 0xb9, 0x55, 0x09, 0x1b,
+	0xf2, 0x4b, 0xf5, 0x93, 0x0f, 0x22, 0xe2, 0x55, 0x2c, 0x56, 0x96, 0x45, 0x87, 0xe5, 0x4b, 0x68,
+	0x4a, 0x97, 0xd2, 0x95, 0xd8, 0x10, 0x25, 0x5b, 0x74, 0x32, 0xf8, 0x52, 0x22, 0x5a, 0x20, 0x5f,
+	0xe1, 0x55, 0xcd, 0xaf, 0x65, 0xab, 0x27, 0x47, 0x8e, 0x86, 0x16, 0xc8, 0x77, 0x60, 0x75, 0x66,
+	0xb6, 0x3f, 0xe5, 0x67, 0xdc, 0xbb, 0xe2, 0x51, 0x3c, 0x73, 0x43, 0xf2, 0x34, 0x99, 0xf8, 0x06,
+	0xa5, 0x48, 0x5a, 0xcf, 0x1e, 0x39, 0x60, 0x3c, 0x9c, 0xdf, 0xd3, 0xc2, 0xd1, 0xde, 0x9f, 0x9e,
+	0x4f, 0x5d, 0x31, 0x5b, 0x5c, 0x1d, 0x8c, 0x03, 0xef, 0x53, 0x5b, 0x2e, 0x27, 0x6e, 0xa0, 0xfe,
+	0x7e, 0x8a, 0x9c, 0x57, 0x15, 0xfc, 0x57, 0xc0, 0xcb, 0xff, 0x04, 0x00, 0x00, 0xff, 0xff, 0x7b,
+	0xe4, 0xc4, 0xfc, 0x70, 0x18, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -1349,6 +2308,10 @@ type AergoRPCServiceClient interface {
 	Metric(ctx context.Context, in *MetricsRequest, opts ...grpc.CallOption) (*Metrics, error)
 	// Returns current blockchain status (best block's height and hash)
 	Blockchain(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*BlockchainStatus, error)
+	// Returns current blockchain's basic information
+	GetChainInfo(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ChainInfo, error)
+	// Returns current chain statistics
+	ChainStat(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ChainStats, error)
 	// Returns list of Blocks without body according to request
 	ListBlockHeaders(ctx context.Context, in *ListParams, opts ...grpc.CallOption) (*BlockHeaderList, error)
 	// Returns list of block metadata (hash, header, and number of transactions) according to request
@@ -1357,8 +2320,12 @@ type AergoRPCServiceClient interface {
 	ListBlockStream(ctx context.Context, in *Empty, opts ...grpc.CallOption) (AergoRPCService_ListBlockStreamClient, error)
 	// Returns a stream of new block's metadata as they get added to the blockchain
 	ListBlockMetadataStream(ctx context.Context, in *Empty, opts ...grpc.CallOption) (AergoRPCService_ListBlockMetadataStreamClient, error)
-	// Return a single block, queried by hash or number
+	// Return a single block incl. header and body, queried by hash or number
 	GetBlock(ctx context.Context, in *SingleBytes, opts ...grpc.CallOption) (*Block, error)
+	// Return a single block's metdata (hash, header, and number of transactions), queried by hash or number
+	GetBlockMetadata(ctx context.Context, in *SingleBytes, opts ...grpc.CallOption) (*BlockMetadata, error)
+	// Return a single block's body, queried by hash or number and list parameters
+	GetBlockBody(ctx context.Context, in *BlockBodyParams, opts ...grpc.CallOption) (*BlockBodyPaged, error)
 	// Return a single transaction, queried by transaction hash
 	GetTX(ctx context.Context, in *SingleBytes, opts ...grpc.CallOption) (*Tx, error)
 	// Return information about transaction in block, queried by transaction hash
@@ -1378,7 +2345,7 @@ type AergoRPCServiceClient interface {
 	// Return state of account
 	GetState(ctx context.Context, in *SingleBytes, opts ...grpc.CallOption) (*State, error)
 	// Return state of account, including merkle proof
-	GetStateAndProof(ctx context.Context, in *AccountAndRoot, opts ...grpc.CallOption) (*StateProof, error)
+	GetStateAndProof(ctx context.Context, in *AccountAndRoot, opts ...grpc.CallOption) (*AccountProof, error)
 	// Create a new account in this node
 	CreateAccount(ctx context.Context, in *Personal, opts ...grpc.CallOption) (*Account, error)
 	// Return list of accounts in this node
@@ -1396,13 +2363,25 @@ type AergoRPCServiceClient interface {
 	// Query contract state
 	QueryContractState(ctx context.Context, in *StateQuery, opts ...grpc.CallOption) (*StateQueryProof, error)
 	// Return list of peers of this node and their state
-	GetPeers(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PeerList, error)
-	// Return list of votes
-	GetVotes(ctx context.Context, in *SingleBytes, opts ...grpc.CallOption) (*VoteList, error)
+	GetPeers(ctx context.Context, in *PeersParams, opts ...grpc.CallOption) (*PeerList, error)
+	// Return result of vote
+	GetVotes(ctx context.Context, in *VoteParams, opts ...grpc.CallOption) (*VoteList, error)
+	// Return staking, voting info for account
+	GetAccountVotes(ctx context.Context, in *AccountAddress, opts ...grpc.CallOption) (*AccountVoteInfo, error)
 	// Return staking information
-	GetStaking(ctx context.Context, in *SingleBytes, opts ...grpc.CallOption) (*Staking, error)
+	GetStaking(ctx context.Context, in *AccountAddress, opts ...grpc.CallOption) (*Staking, error)
 	// Return name information
 	GetNameInfo(ctx context.Context, in *Name, opts ...grpc.CallOption) (*NameInfo, error)
+	// Returns a stream of event as they get added to the blockchain
+	ListEventStream(ctx context.Context, in *FilterInfo, opts ...grpc.CallOption) (AergoRPCService_ListEventStreamClient, error)
+	// Returns list of event
+	ListEvents(ctx context.Context, in *FilterInfo, opts ...grpc.CallOption) (*EventList, error)
+	// Returns configs and statuses of server
+	GetServerInfo(ctx context.Context, in *KeyParams, opts ...grpc.CallOption) (*ServerInfo, error)
+	// Returns status of consensus and bps
+	GetConsensusInfo(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ConsensusInfo, error)
+	// Add & remove member of raft cluster
+	ChangeMembership(ctx context.Context, in *MembershipChange, opts ...grpc.CallOption) (*MembershipChangeReply, error)
 }
 
 type aergoRPCServiceClient struct {
@@ -1434,6 +2413,24 @@ func (c *aergoRPCServiceClient) Metric(ctx context.Context, in *MetricsRequest, 
 func (c *aergoRPCServiceClient) Blockchain(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*BlockchainStatus, error) {
 	out := new(BlockchainStatus)
 	err := c.cc.Invoke(ctx, "/types.AergoRPCService/Blockchain", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aergoRPCServiceClient) GetChainInfo(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ChainInfo, error) {
+	out := new(ChainInfo)
+	err := c.cc.Invoke(ctx, "/types.AergoRPCService/GetChainInfo", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aergoRPCServiceClient) ChainStat(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ChainStats, error) {
+	out := new(ChainStats)
+	err := c.cc.Invoke(ctx, "/types.AergoRPCService/ChainStat", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1531,6 +2528,24 @@ func (c *aergoRPCServiceClient) GetBlock(ctx context.Context, in *SingleBytes, o
 	return out, nil
 }
 
+func (c *aergoRPCServiceClient) GetBlockMetadata(ctx context.Context, in *SingleBytes, opts ...grpc.CallOption) (*BlockMetadata, error) {
+	out := new(BlockMetadata)
+	err := c.cc.Invoke(ctx, "/types.AergoRPCService/GetBlockMetadata", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aergoRPCServiceClient) GetBlockBody(ctx context.Context, in *BlockBodyParams, opts ...grpc.CallOption) (*BlockBodyPaged, error) {
+	out := new(BlockBodyPaged)
+	err := c.cc.Invoke(ctx, "/types.AergoRPCService/GetBlockBody", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *aergoRPCServiceClient) GetTX(ctx context.Context, in *SingleBytes, opts ...grpc.CallOption) (*Tx, error) {
 	out := new(Tx)
 	err := c.cc.Invoke(ctx, "/types.AergoRPCService/GetTX", in, out, opts...)
@@ -1612,8 +2627,8 @@ func (c *aergoRPCServiceClient) GetState(ctx context.Context, in *SingleBytes, o
 	return out, nil
 }
 
-func (c *aergoRPCServiceClient) GetStateAndProof(ctx context.Context, in *AccountAndRoot, opts ...grpc.CallOption) (*StateProof, error) {
-	out := new(StateProof)
+func (c *aergoRPCServiceClient) GetStateAndProof(ctx context.Context, in *AccountAndRoot, opts ...grpc.CallOption) (*AccountProof, error) {
+	out := new(AccountProof)
 	err := c.cc.Invoke(ctx, "/types.AergoRPCService/GetStateAndProof", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -1693,7 +2708,7 @@ func (c *aergoRPCServiceClient) QueryContractState(ctx context.Context, in *Stat
 	return out, nil
 }
 
-func (c *aergoRPCServiceClient) GetPeers(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PeerList, error) {
+func (c *aergoRPCServiceClient) GetPeers(ctx context.Context, in *PeersParams, opts ...grpc.CallOption) (*PeerList, error) {
 	out := new(PeerList)
 	err := c.cc.Invoke(ctx, "/types.AergoRPCService/GetPeers", in, out, opts...)
 	if err != nil {
@@ -1702,7 +2717,7 @@ func (c *aergoRPCServiceClient) GetPeers(ctx context.Context, in *Empty, opts ..
 	return out, nil
 }
 
-func (c *aergoRPCServiceClient) GetVotes(ctx context.Context, in *SingleBytes, opts ...grpc.CallOption) (*VoteList, error) {
+func (c *aergoRPCServiceClient) GetVotes(ctx context.Context, in *VoteParams, opts ...grpc.CallOption) (*VoteList, error) {
 	out := new(VoteList)
 	err := c.cc.Invoke(ctx, "/types.AergoRPCService/GetVotes", in, out, opts...)
 	if err != nil {
@@ -1711,7 +2726,16 @@ func (c *aergoRPCServiceClient) GetVotes(ctx context.Context, in *SingleBytes, o
 	return out, nil
 }
 
-func (c *aergoRPCServiceClient) GetStaking(ctx context.Context, in *SingleBytes, opts ...grpc.CallOption) (*Staking, error) {
+func (c *aergoRPCServiceClient) GetAccountVotes(ctx context.Context, in *AccountAddress, opts ...grpc.CallOption) (*AccountVoteInfo, error) {
+	out := new(AccountVoteInfo)
+	err := c.cc.Invoke(ctx, "/types.AergoRPCService/GetAccountVotes", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aergoRPCServiceClient) GetStaking(ctx context.Context, in *AccountAddress, opts ...grpc.CallOption) (*Staking, error) {
 	out := new(Staking)
 	err := c.cc.Invoke(ctx, "/types.AergoRPCService/GetStaking", in, out, opts...)
 	if err != nil {
@@ -1729,6 +2753,74 @@ func (c *aergoRPCServiceClient) GetNameInfo(ctx context.Context, in *Name, opts 
 	return out, nil
 }
 
+func (c *aergoRPCServiceClient) ListEventStream(ctx context.Context, in *FilterInfo, opts ...grpc.CallOption) (AergoRPCService_ListEventStreamClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_AergoRPCService_serviceDesc.Streams[2], "/types.AergoRPCService/ListEventStream", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &aergoRPCServiceListEventStreamClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type AergoRPCService_ListEventStreamClient interface {
+	Recv() (*Event, error)
+	grpc.ClientStream
+}
+
+type aergoRPCServiceListEventStreamClient struct {
+	grpc.ClientStream
+}
+
+func (x *aergoRPCServiceListEventStreamClient) Recv() (*Event, error) {
+	m := new(Event)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *aergoRPCServiceClient) ListEvents(ctx context.Context, in *FilterInfo, opts ...grpc.CallOption) (*EventList, error) {
+	out := new(EventList)
+	err := c.cc.Invoke(ctx, "/types.AergoRPCService/ListEvents", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aergoRPCServiceClient) GetServerInfo(ctx context.Context, in *KeyParams, opts ...grpc.CallOption) (*ServerInfo, error) {
+	out := new(ServerInfo)
+	err := c.cc.Invoke(ctx, "/types.AergoRPCService/GetServerInfo", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aergoRPCServiceClient) GetConsensusInfo(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ConsensusInfo, error) {
+	out := new(ConsensusInfo)
+	err := c.cc.Invoke(ctx, "/types.AergoRPCService/GetConsensusInfo", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aergoRPCServiceClient) ChangeMembership(ctx context.Context, in *MembershipChange, opts ...grpc.CallOption) (*MembershipChangeReply, error) {
+	out := new(MembershipChangeReply)
+	err := c.cc.Invoke(ctx, "/types.AergoRPCService/ChangeMembership", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AergoRPCServiceServer is the server API for AergoRPCService service.
 type AergoRPCServiceServer interface {
 	// Returns the current state of this node
@@ -1737,6 +2829,10 @@ type AergoRPCServiceServer interface {
 	Metric(context.Context, *MetricsRequest) (*Metrics, error)
 	// Returns current blockchain status (best block's height and hash)
 	Blockchain(context.Context, *Empty) (*BlockchainStatus, error)
+	// Returns current blockchain's basic information
+	GetChainInfo(context.Context, *Empty) (*ChainInfo, error)
+	// Returns current chain statistics
+	ChainStat(context.Context, *Empty) (*ChainStats, error)
 	// Returns list of Blocks without body according to request
 	ListBlockHeaders(context.Context, *ListParams) (*BlockHeaderList, error)
 	// Returns list of block metadata (hash, header, and number of transactions) according to request
@@ -1745,8 +2841,12 @@ type AergoRPCServiceServer interface {
 	ListBlockStream(*Empty, AergoRPCService_ListBlockStreamServer) error
 	// Returns a stream of new block's metadata as they get added to the blockchain
 	ListBlockMetadataStream(*Empty, AergoRPCService_ListBlockMetadataStreamServer) error
-	// Return a single block, queried by hash or number
+	// Return a single block incl. header and body, queried by hash or number
 	GetBlock(context.Context, *SingleBytes) (*Block, error)
+	// Return a single block's metdata (hash, header, and number of transactions), queried by hash or number
+	GetBlockMetadata(context.Context, *SingleBytes) (*BlockMetadata, error)
+	// Return a single block's body, queried by hash or number and list parameters
+	GetBlockBody(context.Context, *BlockBodyParams) (*BlockBodyPaged, error)
 	// Return a single transaction, queried by transaction hash
 	GetTX(context.Context, *SingleBytes) (*Tx, error)
 	// Return information about transaction in block, queried by transaction hash
@@ -1766,7 +2866,7 @@ type AergoRPCServiceServer interface {
 	// Return state of account
 	GetState(context.Context, *SingleBytes) (*State, error)
 	// Return state of account, including merkle proof
-	GetStateAndProof(context.Context, *AccountAndRoot) (*StateProof, error)
+	GetStateAndProof(context.Context, *AccountAndRoot) (*AccountProof, error)
 	// Create a new account in this node
 	CreateAccount(context.Context, *Personal) (*Account, error)
 	// Return list of accounts in this node
@@ -1784,13 +2884,25 @@ type AergoRPCServiceServer interface {
 	// Query contract state
 	QueryContractState(context.Context, *StateQuery) (*StateQueryProof, error)
 	// Return list of peers of this node and their state
-	GetPeers(context.Context, *Empty) (*PeerList, error)
-	// Return list of votes
-	GetVotes(context.Context, *SingleBytes) (*VoteList, error)
+	GetPeers(context.Context, *PeersParams) (*PeerList, error)
+	// Return result of vote
+	GetVotes(context.Context, *VoteParams) (*VoteList, error)
+	// Return staking, voting info for account
+	GetAccountVotes(context.Context, *AccountAddress) (*AccountVoteInfo, error)
 	// Return staking information
-	GetStaking(context.Context, *SingleBytes) (*Staking, error)
+	GetStaking(context.Context, *AccountAddress) (*Staking, error)
 	// Return name information
 	GetNameInfo(context.Context, *Name) (*NameInfo, error)
+	// Returns a stream of event as they get added to the blockchain
+	ListEventStream(*FilterInfo, AergoRPCService_ListEventStreamServer) error
+	// Returns list of event
+	ListEvents(context.Context, *FilterInfo) (*EventList, error)
+	// Returns configs and statuses of server
+	GetServerInfo(context.Context, *KeyParams) (*ServerInfo, error)
+	// Returns status of consensus and bps
+	GetConsensusInfo(context.Context, *Empty) (*ConsensusInfo, error)
+	// Add & remove member of raft cluster
+	ChangeMembership(context.Context, *MembershipChange) (*MembershipChangeReply, error)
 }
 
 func RegisterAergoRPCServiceServer(s *grpc.Server, srv AergoRPCServiceServer) {
@@ -1847,6 +2959,42 @@ func _AergoRPCService_Blockchain_Handler(srv interface{}, ctx context.Context, d
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AergoRPCServiceServer).Blockchain(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AergoRPCService_GetChainInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AergoRPCServiceServer).GetChainInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/types.AergoRPCService/GetChainInfo",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AergoRPCServiceServer).GetChainInfo(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AergoRPCService_ChainStat_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AergoRPCServiceServer).ChainStat(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/types.AergoRPCService/ChainStat",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AergoRPCServiceServer).ChainStat(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1943,6 +3091,42 @@ func _AergoRPCService_GetBlock_Handler(srv interface{}, ctx context.Context, dec
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AergoRPCServiceServer).GetBlock(ctx, req.(*SingleBytes))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AergoRPCService_GetBlockMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SingleBytes)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AergoRPCServiceServer).GetBlockMetadata(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/types.AergoRPCService/GetBlockMetadata",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AergoRPCServiceServer).GetBlockMetadata(ctx, req.(*SingleBytes))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AergoRPCService_GetBlockBody_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BlockBodyParams)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AergoRPCServiceServer).GetBlockBody(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/types.AergoRPCService/GetBlockBody",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AergoRPCServiceServer).GetBlockBody(ctx, req.(*BlockBodyParams))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2272,7 +3456,7 @@ func _AergoRPCService_QueryContractState_Handler(srv interface{}, ctx context.Co
 }
 
 func _AergoRPCService_GetPeers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
+	in := new(PeersParams)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -2284,13 +3468,13 @@ func _AergoRPCService_GetPeers_Handler(srv interface{}, ctx context.Context, dec
 		FullMethod: "/types.AergoRPCService/GetPeers",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AergoRPCServiceServer).GetPeers(ctx, req.(*Empty))
+		return srv.(AergoRPCServiceServer).GetPeers(ctx, req.(*PeersParams))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _AergoRPCService_GetVotes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SingleBytes)
+	in := new(VoteParams)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -2302,13 +3486,31 @@ func _AergoRPCService_GetVotes_Handler(srv interface{}, ctx context.Context, dec
 		FullMethod: "/types.AergoRPCService/GetVotes",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AergoRPCServiceServer).GetVotes(ctx, req.(*SingleBytes))
+		return srv.(AergoRPCServiceServer).GetVotes(ctx, req.(*VoteParams))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AergoRPCService_GetAccountVotes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AccountAddress)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AergoRPCServiceServer).GetAccountVotes(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/types.AergoRPCService/GetAccountVotes",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AergoRPCServiceServer).GetAccountVotes(ctx, req.(*AccountAddress))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _AergoRPCService_GetStaking_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SingleBytes)
+	in := new(AccountAddress)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -2320,7 +3522,7 @@ func _AergoRPCService_GetStaking_Handler(srv interface{}, ctx context.Context, d
 		FullMethod: "/types.AergoRPCService/GetStaking",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AergoRPCServiceServer).GetStaking(ctx, req.(*SingleBytes))
+		return srv.(AergoRPCServiceServer).GetStaking(ctx, req.(*AccountAddress))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2343,6 +3545,99 @@ func _AergoRPCService_GetNameInfo_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AergoRPCService_ListEventStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(FilterInfo)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(AergoRPCServiceServer).ListEventStream(m, &aergoRPCServiceListEventStreamServer{stream})
+}
+
+type AergoRPCService_ListEventStreamServer interface {
+	Send(*Event) error
+	grpc.ServerStream
+}
+
+type aergoRPCServiceListEventStreamServer struct {
+	grpc.ServerStream
+}
+
+func (x *aergoRPCServiceListEventStreamServer) Send(m *Event) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _AergoRPCService_ListEvents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FilterInfo)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AergoRPCServiceServer).ListEvents(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/types.AergoRPCService/ListEvents",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AergoRPCServiceServer).ListEvents(ctx, req.(*FilterInfo))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AergoRPCService_GetServerInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(KeyParams)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AergoRPCServiceServer).GetServerInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/types.AergoRPCService/GetServerInfo",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AergoRPCServiceServer).GetServerInfo(ctx, req.(*KeyParams))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AergoRPCService_GetConsensusInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AergoRPCServiceServer).GetConsensusInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/types.AergoRPCService/GetConsensusInfo",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AergoRPCServiceServer).GetConsensusInfo(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AergoRPCService_ChangeMembership_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MembershipChange)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AergoRPCServiceServer).ChangeMembership(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/types.AergoRPCService/ChangeMembership",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AergoRPCServiceServer).ChangeMembership(ctx, req.(*MembershipChange))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _AergoRPCService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "types.AergoRPCService",
 	HandlerType: (*AergoRPCServiceServer)(nil),
@@ -2360,6 +3655,14 @@ var _AergoRPCService_serviceDesc = grpc.ServiceDesc{
 			Handler:    _AergoRPCService_Blockchain_Handler,
 		},
 		{
+			MethodName: "GetChainInfo",
+			Handler:    _AergoRPCService_GetChainInfo_Handler,
+		},
+		{
+			MethodName: "ChainStat",
+			Handler:    _AergoRPCService_ChainStat_Handler,
+		},
+		{
 			MethodName: "ListBlockHeaders",
 			Handler:    _AergoRPCService_ListBlockHeaders_Handler,
 		},
@@ -2370,6 +3673,14 @@ var _AergoRPCService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetBlock",
 			Handler:    _AergoRPCService_GetBlock_Handler,
+		},
+		{
+			MethodName: "GetBlockMetadata",
+			Handler:    _AergoRPCService_GetBlockMetadata_Handler,
+		},
+		{
+			MethodName: "GetBlockBody",
+			Handler:    _AergoRPCService_GetBlockBody_Handler,
 		},
 		{
 			MethodName: "GetTX",
@@ -2452,12 +3763,32 @@ var _AergoRPCService_serviceDesc = grpc.ServiceDesc{
 			Handler:    _AergoRPCService_GetVotes_Handler,
 		},
 		{
+			MethodName: "GetAccountVotes",
+			Handler:    _AergoRPCService_GetAccountVotes_Handler,
+		},
+		{
 			MethodName: "GetStaking",
 			Handler:    _AergoRPCService_GetStaking_Handler,
 		},
 		{
 			MethodName: "GetNameInfo",
 			Handler:    _AergoRPCService_GetNameInfo_Handler,
+		},
+		{
+			MethodName: "ListEvents",
+			Handler:    _AergoRPCService_ListEvents_Handler,
+		},
+		{
+			MethodName: "GetServerInfo",
+			Handler:    _AergoRPCService_GetServerInfo_Handler,
+		},
+		{
+			MethodName: "GetConsensusInfo",
+			Handler:    _AergoRPCService_GetConsensusInfo_Handler,
+		},
+		{
+			MethodName: "ChangeMembership",
+			Handler:    _AergoRPCService_ChangeMembership_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
@@ -2469,6 +3800,11 @@ var _AergoRPCService_serviceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "ListBlockMetadataStream",
 			Handler:       _AergoRPCService_ListBlockMetadataStream_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "ListEventStream",
+			Handler:       _AergoRPCService_ListEventStream_Handler,
 			ServerStreams: true,
 		},
 	},
