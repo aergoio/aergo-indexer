@@ -20,6 +20,8 @@ const (
 	Staking    TxCategory = "staking"
 	Voting     TxCategory = "voting"
 	Name       TxCategory = "name"
+	NameCreate TxCategory = "namecreate"
+	NameUpdate TxCategory = "nameupdate"
 	Enterprise TxCategory = "enterprise"
 	Conf       TxCategory = "conf"
 	Cluster    TxCategory = "cluster"
@@ -56,6 +58,16 @@ func DetectTxCategory(tx *types.Tx) TxCategory {
 		return Enterprise
 	}
 	if txRecipient == "aergo.name" {
+		txCallName, err := transaction.GetCallName(tx)
+		if err != nil {
+			txCallName = strings.ToLower(txCallName)
+			if strings.HasSuffix(txCallName, "updatename") {
+				return NameUpdate
+			}
+			if strings.HasSuffix(txCallName, "createname") {
+				return NameCreate
+			}
+		}
 		return Name
 	}
 	if txRecipient == "aergo.system" {
@@ -65,7 +77,7 @@ func DetectTxCategory(tx *types.Tx) TxCategory {
 			if strings.HasSuffix(txCallName, "stake") || strings.HasSuffix(txCallName, "unstake") {
 				return Staking
 			}
-			if strings.HasSuffix(txCallName, "vote") || strings.HasSuffix(txCallName, "proposal") {
+			if strings.HasSuffix(txCallName, "vote") || strings.HasSuffix(txCallName, "votebp") || strings.HasSuffix(txCallName, "proposal") {
 				return Voting
 			}
 		}
