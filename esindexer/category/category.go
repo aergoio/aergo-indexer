@@ -46,7 +46,7 @@ func DetectTxCategory(tx *types.Tx) TxCategory {
 	}
 	if txRecipient == "aergo.enterprise" {
 		txCallName, err := transaction.GetCallName(tx)
-		if err != nil {
+		if err == nil {
 			txCallName = strings.ToLower(txCallName)
 			if strings.HasSuffix(txCallName, "cluster") {
 				return Cluster
@@ -59,7 +59,7 @@ func DetectTxCategory(tx *types.Tx) TxCategory {
 	}
 	if txRecipient == "aergo.name" {
 		txCallName, err := transaction.GetCallName(tx)
-		if err != nil {
+		if err == nil {
 			txCallName = strings.ToLower(txCallName)
 			if strings.HasSuffix(txCallName, "updatename") {
 				return NameUpdate
@@ -72,7 +72,7 @@ func DetectTxCategory(tx *types.Tx) TxCategory {
 	}
 	if txRecipient == "aergo.system" {
 		txCallName, err := transaction.GetCallName(tx)
-		if err != nil {
+		if err == nil {
 			txCallName = strings.ToLower(txCallName)
 			if strings.HasSuffix(txCallName, "stake") || strings.HasSuffix(txCallName, "unstake") {
 				return Staking
