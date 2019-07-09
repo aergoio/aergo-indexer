@@ -27,6 +27,7 @@ to       string
 amount   string
 type     string      "0" or "1"
 payload0 byte        first byte of payload
+category string      user-friendly category
 ```
 
 Names
@@ -53,7 +54,7 @@ You need Glide to install dependencies.
 
 You can use the `--prefix` parameter and multiple instances of this program to sync several blockchains with one database.
 
-Instead of setting host and port of the aergo separately, you can also pass them at once with `-A localhost:7845`.
+Instead of setting host and port of the aergo server separately, you can also pass them at once with `-A localhost:7845`.
 
 To reindex (starting from scratch):
 
@@ -65,5 +66,5 @@ This means the old data can still be accessed until the sync is complete.
 
 ## Build and run using Docker
 
-    docker build --build-arg GIT_TAG=70a67ba -t aergo/esindexer .
+    docker build -t aergo/esindexer .
     docker run aergo/esindexer esindexer -A ip:7845 -E ip:9200 --prefix chain_
