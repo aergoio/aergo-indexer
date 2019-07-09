@@ -2,11 +2,12 @@ package esindexer
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"math/big"
 	"time"
 
+	"github.com/aergoio/aergo-esindexer/esindexer/category"
+	"github.com/aergoio/aergo-esindexer/esindexer/transaction"
 	"github.com/aergoio/aergo-esindexer/types"
 	"github.com/golang/protobuf/proto"
 	"github.com/mr-tron/base58/base58"
@@ -16,7 +17,8 @@ func isInternalName(name string) bool {
 	switch name {
 	case
 		"aergo.name",
-		"aergo.system":
+		"aergo.system",
+		"aergo.enterprise":
 		return true
 	}
 	return false
@@ -49,13 +51,14 @@ type EsBlock struct {
 // EsTx is a transaction stored in elasticsearch
 type EsTx struct {
 	*BaseEsType
-	Timestamp time.Time `json:"ts"`
-	BlockNo   uint64    `json:"blockno"`
-	Account   string    `json:"from"`
-	Recipient string    `json:"to"`
-	Amount    string    `json:"amount"` // string of BigInt
-	Type      string    `json:"type"`
-	Payload0  string    `json:"payload0"` // first byte of payload
+	Timestamp time.Time           `json:"ts"`
+	BlockNo   uint64              `json:"blockno"`
+	Account   string              `json:"from"`
+	Recipient string              `json:"to"`
+	Amount    string              `json:"amount"` // string of BigInt
+	Type      string              `json:"type"`
+	Payload0  string              `json:"payload0"` // first byte of payload
+	Category  category.TxCategory `json:"category"`
 }
 
 // EsName is a name-address mapping stored in elasticsearch
@@ -82,7 +85,7 @@ func encodeAccount(account []byte) string {
 	if account == nil {
 		return ""
 	}
-	if len(account) <= 12 {
+	if len(account) <= 12 || isInternalName(string(account)) {
 		return string(account)
 	}
 	return types.EncodeAddress(account)
@@ -122,6 +125,7 @@ func (ns *EsIndexer) ConvTx(tx *types.Tx, blockNo uint64) EsTx {
 		Amount:     amount,
 		Type:       fmt.Sprintf("%d", tx.Body.Type),
 		Payload0:   payload0,
+		Category:   category.DetectTxCategory(tx),
 	}
 	return doc
 }
@@ -135,9 +139,8 @@ type txPayload struct {
 func (ns *EsIndexer) ConvNameTx(tx *types.Tx, blockNo uint64) EsName {
 	var name = "error"
 	var address string
-	payloadSource := tx.GetBody().GetPayload()
-	payload := new(txPayload)
-	if err := json.Unmarshal(payloadSource, payload); err == nil {
+	payload, err := transaction.UnmarshalPayload(tx)
+	if err == nil {
 		name = payload.Args[0]
 		if payload.Name == "v1createName" {
 			address = ns.encodeAndResolveAccount(tx.Body.Account, blockNo)
@@ -180,6 +183,9 @@ var mappings = map[string]string{
 						"type": "keyword"
 					},
 					"payload0": {
+						"type": "keyword"
+					},
+					"category": {
 						"type": "keyword"
 					}
 				}
