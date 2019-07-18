@@ -130,16 +130,11 @@ func (ns *EsIndexer) ConvTx(tx *types.Tx, blockNo uint64) EsTx {
 	return doc
 }
 
-type txPayload struct {
-	Name string   `json:"Name"`
-	Args []string `json:"Args"`
-}
-
 // ConvNameTx parses a name transaction into Elasticsearch type
 func (ns *EsIndexer) ConvNameTx(tx *types.Tx, blockNo uint64) EsName {
 	var name = "error"
 	var address string
-	payload, err := transaction.UnmarshalPayload(tx)
+	payload, err := transaction.UnmarshalPayloadWithArgs(tx)
 	if err == nil {
 		name = payload.Args[0]
 		if payload.Name == "v1createName" {
