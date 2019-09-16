@@ -8,8 +8,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/aergoio/aergo-esindexer/esindexer"
-	"github.com/aergoio/aergo-esindexer/types"
+	indx "github.com/aergoio/aergo-indexer/indexer"
+	"github.com/aergoio/aergo-indexer/types"
 	"github.com/aergoio/aergo-lib/log"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
@@ -17,23 +17,23 @@ import (
 
 var (
 	rootCmd = &cobra.Command{
-		Use:   "esindexer",
-		Short: "Aergo Elasticsearch Indexer",
-		Long:  "Aergo Metadata Indexer for Elasticsearch",
+		Use:   "aergoindexer",
+		Short: "Aergo Indexer",
+		Long:  "Aergo Metadata Indexer",
 		Run:   rootRun,
 	}
 	reindexingMode  bool
 	exitOnComplete  bool
 	host            string
 	port            int32
-	esURL           string
+	dbURL           string
 	indexNamePrefix string
 	aergoAddress    string
 
 	logger *log.Logger
 
 	client  types.AergoRPCServiceClient
-	indexer *esindexer.EsIndexer
+	indexer *indx.Indexer
 )
 
 func init() {
@@ -43,7 +43,7 @@ func init() {
 	fs.StringVarP(&host, "host", "H", "localhost", "host address of aergo server")
 	fs.Int32VarP(&port, "port", "p", 7845, "port number of aergo server")
 	fs.StringVarP(&aergoAddress, "aergo", "A", "", "host and port of aergo server. Alternative to setting host and port separately.")
-	fs.StringVarP(&esURL, "esurl", "E", "http://127.0.0.1:9200", "URL of elasticsearch server")
+	fs.StringVarP(&dbURL, "dburl", "D", "http://localhost:8086", "URL of InfluxDB server")
 	fs.StringVarP(&indexNamePrefix, "prefix", "X", "chain_", "prefix used for index names")
 }
 
@@ -57,12 +57,16 @@ func rootRun(cmd *cobra.Command, args []string) {
 	logger = log.NewLogger("esindexer")
 	logger.Info().Msg("Starting")
 
-	indexer = esindexer.NewEsIndexer(logger, esURL, indexNamePrefix)
+	indexer, err := indx.NewIndexer(logger, dbURL, indexNamePrefix)
+	if err != nil {
+		logger.Warn().Err(err).Str("dbURL", dbURL).Msg("Could not start indexer")
+		return
+	}
 	client = waitForClient(getServerAddress())
 
-	err := indexer.Start(client, reindexingMode, exitOnComplete)
+	err = indexer.Start(client, reindexingMode, exitOnComplete)
 	if err != nil {
-		logger.Warn().Err(err).Str("esURL", esURL).Msg("Could not start elasticsearch indexer")
+		logger.Warn().Err(err).Str("dbURL", dbURL).Msg("Could not start indexer")
 		return
 	}
 

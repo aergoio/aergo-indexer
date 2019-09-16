@@ -1,4 +1,4 @@
-package esindexer
+package syncer
 
 import (
 	"context"
@@ -12,15 +12,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aergoio/aergo-esindexer/types"
+	"github.com/aergoio/aergo-indexer/indexer/db"
+	"github.com/aergoio/aergo-indexer/types"
 	"github.com/aergoio/aergo-lib/log"
 	"github.com/mr-tron/base58/base58"
 	"github.com/olivere/elastic"
 )
 
-// EsIndexer hold all state information
-type EsIndexer struct {
-	client          *elastic.Client
+// Syncer keeps syncing state information
+type Syncer struct {
+	dbClient        *db.Client
 	grpcClient      types.AergoRPCServiceClient
 	aliasNamePrefix string
 	indexNamePrefix string
@@ -34,13 +35,12 @@ type EsIndexer struct {
 	stream          types.AergoRPCService_ListBlockStreamClient
 }
 
-// NewEsIndexer creates new EsIndexer instance
-func NewEsIndexer(logger *log.Logger, esURL string, namePrefix string) *EsIndexer {
+// NewSyncer creates new Syncer instance
+func NewSyncer(logger *log.Logger, dbURL string, namePrefix string) *EsIndexer {
 	aliasNamePrefix := namePrefix
 	svc := &EsIndexer{
+		dbClient:        db.NewClient(dbURL, aliasNamePrefix, generateIndexPrefix(aliasNamePrefix)),
 		esURL:           esURL,
-		aliasNamePrefix: aliasNamePrefix,
-		indexNamePrefix: generateIndexPrefix(aliasNamePrefix),
 		lastBlockHeight: 0,
 		lastBlockHash:   "",
 		State:           "booting",
@@ -383,8 +383,8 @@ func (ns *EsIndexer) IndexBlock(block *types.Block) {
 	}
 
 	if len(block.Body.Txs) > 0 {
-		txChannel := make(chan EsType)
-		nameChannel := make(chan EsType)
+		txChannel := make(chan DocType)
+		nameChannel := make(chan DocType)
 		done := make(chan struct{})
 		generator := func() error {
 			defer close(txChannel)
@@ -409,10 +409,10 @@ func (ns *EsIndexer) IndexBlock(block *types.Block) {
 // IndexBlocksInRange indexes blocks in the range of [fromBlockheight, toBlockHeight]
 func (ns *EsIndexer) IndexBlocksInRange(fromBlockHeight uint64, toBlockHeight uint64) {
 	ctx := context.Background()
-	channel := make(chan EsType, 1000)
+	channel := make(chan DocType, 1000)
 	done := make(chan struct{})
-	txChannel := make(chan EsType, 20000)
-	nameChannel := make(chan EsType, 5000)
+	txChannel := make(chan DocType, 20000)
+	nameChannel := make(chan DocType, 5000)
 	generator := func() error {
 		defer close(channel)
 		defer close(done)
@@ -458,7 +458,7 @@ func (ns *EsIndexer) IndexBlocksInRange(fromBlockHeight uint64, toBlockHeight ui
 }
 
 // IndexTxs indexes a list of transactions in bulk
-func (ns *EsIndexer) IndexTxs(block *types.Block, txs []*types.Tx, channel chan EsType, nameChannel chan EsType) {
+func (ns *EsIndexer) IndexTxs(block *types.Block, txs []*types.Tx, channel chan DocType, nameChannel chan DocType) {
 	// This simply pushes all Txs to the channel to be consumed elsewhere
 	blockTs := time.Unix(0, block.Header.Timestamp)
 	for _, tx := range txs {

@@ -3,7 +3,7 @@ package transaction
 import (
 	"encoding/json"
 
-	"github.com/aergoio/aergo-esindexer/types"
+	"github.com/aergoio/aergo-indexer/types"
 )
 
 // Payload is an unmarshalled contract call payload, but only supports string arguments
