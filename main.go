@@ -27,6 +27,7 @@ var (
 	host            string
 	port            int32
 	dbURL           string
+	dbType          string
 	indexNamePrefix string
 	aergoAddress    string
 
@@ -44,6 +45,7 @@ func init() {
 	fs.Int32VarP(&port, "port", "p", 7845, "port number of aergo server")
 	fs.StringVarP(&aergoAddress, "aergo", "A", "", "host and port of aergo server. Alternative to setting host and port separately.")
 	fs.StringVarP(&dbURL, "dburl", "D", "http://localhost:8086", "URL of InfluxDB server")
+	fs.StringVarP(&dbType, "dbtype", "T", "es", "Type of database used (es, mariadb)")
 	fs.StringVarP(&indexNamePrefix, "prefix", "X", "chain_", "prefix used for index names")
 }
 
@@ -54,10 +56,10 @@ func main() {
 }
 
 func rootRun(cmd *cobra.Command, args []string) {
-	logger = log.NewLogger("esindexer")
+	logger = log.NewLogger("indexer")
 	logger.Info().Msg("Starting")
 
-	indexer, err := indx.NewIndexer(logger, dbURL, indexNamePrefix)
+	indexer, err := indx.NewIndexer(logger, dbType, dbURL, indexNamePrefix)
 	if err != nil {
 		logger.Warn().Err(err).Str("dbURL", dbURL).Msg("Could not start indexer")
 		return

@@ -39,11 +39,14 @@ type DbController interface {
 	InsertBulk(documentChannel chan doc.DocType, params UpdateParams) (uint64, error)
 	Delete(params QueryParams) (uint64, error)
 	Count(params QueryParams) (int64, error)
-	SelectOne(params QueryParams, unmarshal UnmarshalFunc) (doc.DocType, error)
-	Scroll(params QueryParams, unmarshal UnmarshalFunc) ScrollInstance
+	SelectOne(params QueryParams, document doc.DocType) error
+	Scroll(params QueryParams, createDocument CreateDocFunction) ScrollInstance
+	GetExistingIndexPrefix(aliasName string, documentType string) (bool, string, error)
+	CreateIndex(indexName string, documentType string) error
+	UpdateAlias(aliasName string, indexName string) error
 }
 
-type UnmarshalFunc = func([]byte) (doc.DocType, error)
+type CreateDocFunction = func() doc.DocType
 
 type ScrollInstance interface {
 	/*

@@ -3,7 +3,6 @@ package indexer
 import (
 	"context"
 	"encoding/binary"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -18,7 +17,7 @@ import (
 
 // Indexer hold all state information
 type Indexer struct {
-	db              *db.ElasticsearchDbController
+	db              db.DbController
 	grpcClient      types.AergoRPCServiceClient
 	aliasNamePrefix string
 	indexNamePrefix string
@@ -32,14 +31,24 @@ type Indexer struct {
 }
 
 // NewIndexer creates new Indexer instance
-func NewIndexer(logger *log.Logger, esURL string, namePrefix string) (*Indexer, error) {
+func NewIndexer(logger *log.Logger, dbType string, dbURL string, namePrefix string) (*Indexer, error) {
 	aliasNamePrefix := namePrefix
-	db, err := db.NewElasticsearchDbController(esURL)
+	var dbController db.DbController
+	var err error
+	switch dbType {
+	case "es":
+		dbController, err = db.NewElasticsearchDbController(dbURL)
+	case "mariadb":
+		dbController, err = db.NewMariaDbController(dbURL)
+	default:
+		return nil, fmt.Errorf("Invalid database type: %s", dbType)
+	}
 	if err != nil {
 		return nil, err
 	}
+	logger.Info().Str("dbType", dbType).Str("dbURL", dbURL).Msg("Initialized database connection")
 	svc := &Indexer{
-		db:              db,
+		db:              dbController,
 		aliasNamePrefix: aliasNamePrefix,
 		indexNamePrefix: generateIndexPrefix(aliasNamePrefix),
 		lastBlockHeight: 0,
@@ -64,7 +73,7 @@ func (ns *Indexer) CreateIndexIfNotExists(documentType string) {
 	if !ns.reindexing {
 		exists, indexNamePrefix, err := ns.db.GetExistingIndexPrefix(aliasName, documentType)
 		if err != nil {
-			ns.log.Warn().Err(err).Msg("Error when checking for alias")
+			ns.log.Error().Err(err).Msg("Error when checking for alias")
 		}
 		if exists {
 			ns.log.Info().Str("aliasName", aliasName).Str("indexNamePrefix", indexNamePrefix).Msg("Alias found")
@@ -80,7 +89,7 @@ func (ns *Indexer) CreateIndexIfNotExists(documentType string) {
 
 		err := ns.db.CreateIndex(indexName, documentType)
 		if err != nil {
-			ns.log.Warn().Err(err).Str("indexName", indexName).Msg("Error when creating index")
+			ns.log.Error().Err(err).Str("indexName", indexName).Msg("Error when creating index")
 		} else {
 			ns.log.Info().Str("indexName", indexName).Msg("Created index")
 		}
@@ -88,7 +97,7 @@ func (ns *Indexer) CreateIndexIfNotExists(documentType string) {
 		if !ns.reindexing {
 			err = ns.db.UpdateAlias(aliasName, indexName)
 			if err != nil {
-				ns.log.Warn().Err(err).Str("aliasName", aliasName).Str("indexName", indexName).Msg("Error when updating alias")
+				ns.log.Error().Err(err).Str("aliasName", aliasName).Str("indexName", indexName).Msg("Error when updating alias")
 			} else {
 				ns.log.Info().Str("aliasName", aliasName).Str("indexName", indexName).Msg("Updated alias")
 			}
@@ -153,11 +162,6 @@ func (ns *Indexer) Start(grpcClient types.AergoRPCServiceClient, reindex bool, e
 	}
 
 	return ns.StartStream()
-}
-
-type esBlockNo struct {
-	*doc.BaseEsType
-	BlockNo uint64 `json:"no"`
 }
 
 // StartStream starts the block stream and calls SyncBlock
@@ -243,30 +247,26 @@ func (ns *Indexer) SyncBlock(block *types.Block) {
 
 // GetBestBlockFromDb retrieves the current best block from the db
 func (ns *Indexer) GetBestBlockFromDb() (*doc.EsBlock, error) {
-	block, err := ns.db.SelectOne(db.QueryParams{
+	block := new(doc.EsBlock)
+	err := ns.db.SelectOne(db.QueryParams{
 		IndexName: ns.indexNamePrefix + "block",
 		SortField: "no",
 		SortAsc:   false,
-	}, func(jsonData []byte) (doc.DocType, error) {
-		block := new(doc.EsBlock)
-		if err := json.Unmarshal(jsonData, block); err != nil {
-			return nil, err
-		}
-		return block, nil
-	})
+	}, block)
 	if err != nil {
 		return nil, err
 	}
 	if block == nil {
 		return nil, errors.New("best block not found")
 	}
-	return block.(*doc.EsBlock), nil
+	return block, nil
 }
 
 // UpdateLastBlockHeightFromDb updates state from db
 func (ns *Indexer) UpdateLastBlockHeightFromDb() {
 	bestBlock, err := ns.GetBestBlockFromDb()
 	if err != nil {
+		ns.log.Warn().Err(err).Msg("Failed to update best block")
 		return
 	}
 	ns.lastBlockHeight = bestBlock.BlockNo

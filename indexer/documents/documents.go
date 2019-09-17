@@ -14,7 +14,7 @@ type DocType interface {
 
 // BaseEsType implements DocType and contains the document's id
 type BaseEsType struct {
-	Id string
+	Id string `db:"id"`
 }
 
 // GetID returns the document's id
@@ -30,10 +30,10 @@ func (m BaseEsType) SetID(id string) {
 // EsBlock is a block stored in elasticsearch
 type EsBlock struct {
 	*BaseEsType
-	Timestamp time.Time `json:"ts"`
-	BlockNo   uint64    `json:"no"`
-	TxCount   uint      `json:"txs"`
-	Size      int64     `json:"size"`
+	Timestamp time.Time `json:"ts" db:"ts"`
+	BlockNo   uint64    `json:"no" db:"no"`
+	TxCount   uint      `json:"txs" db:"txs"`
+	Size      int64     `json:"size" db:"size"`
 }
 
 // EsTx is a transaction stored in elasticsearch
@@ -59,7 +59,7 @@ type EsName struct {
 }
 
 // EsMappings contains the elasticsearch mappings
-var Mappings = map[string]string{
+var EsMappings = map[string]string{
 	"tx": `{
 		"mappings":{
 			"tx":{
@@ -132,4 +132,47 @@ var Mappings = map[string]string{
 			}
 		}
 	}`,
+}
+
+// SQLSchemas contains schema for SQL backends
+var SQLSchemas = map[string]string{
+	"tx": `
+		CREATE TABLE ` + "`" + `%indexName%` + "`" + ` (
+			id VARCHAR(56),
+			ts DATETIME NOT NULL,
+			blockno BIGINT NOT NULL,
+			` + "`" + `from` + "`" + ` VARCHAR(56) NOT NULL,
+			` + "`" + `to` + "`" + ` VARCHAR(56),
+			amount VARCHAR(30) NOT NULL,
+			amount_float FLOAT(23) NOT NULL,
+			type CHAR(1) NOT NULL,
+			payload0 CHAR(1),
+			category VARCHAR(12),
+			PRIMARY KEY (id),
+			INDEX tx_from (` + "`" + `from` + "`" + `),
+			INDEX tx_to (` + "`" + `to` + "`" + `),
+			INDEX tx_category (category),
+			INDEX tx_blockno (blockno)
+		);`,
+	"block": `
+		CREATE TABLE ` + "`" + `%indexName%` + "`" + ` (
+			id VARCHAR(56),
+			ts DATETIME NOT NULL,
+			no BIGINT NOT NULL,
+			txs INTEGER NOT NULL,
+			size INTEGER NOT NULL,
+			PRIMARY KEY (id),
+			INDEX block_no (no)
+		);`,
+	"name": `
+		CREATE TABLE ` + "`" + `%indexName%` + "`" + ` (
+			id VARCHAR(70),
+			name VARCHAR(12) NOT NULL,
+			address VARCHAR(56) NOT NULL,
+			blockno BIGINT NOT NULL,
+			tx VARCHAR(56) NOT NULL,
+			PRIMARY KEY (id),
+			INDEX name_name (name),
+			INDEX name_address (address)
+		);`,
 }
