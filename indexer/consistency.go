@@ -19,10 +19,10 @@ func (ns *Indexer) CheckConsistency() {
 		ns.log.Warn().Err(err).Msg("Failed to query block count")
 		return
 	}
-	/*if uint64(count) >= ns.lastBlockHeight+1 {
+	if uint64(count) >= ns.lastBlockHeight+1 {
 		ns.log.Info().Int64("total indexed", count).Uint64("expected", ns.lastBlockHeight+1).Msg("Skipping consistency check")
 		return
-	}*/
+	}
 	ns.log.Info().Int64("total indexed", count).Uint64("expected", ns.lastBlockHeight+1).Msg("Checking consistency")
 
 	prevBlockNo := uint64(0)
@@ -32,7 +32,7 @@ func (ns *Indexer) CheckConsistency() {
 		IndexName:    ns.indexNamePrefix + "block",
 		TypeName:     "block",
 		SelectFields: []string{"no"},
-		Size:         1000,
+		Size:         10000,
 		SortField:    "no",
 		SortAsc:      true,
 	}, func() doc.DocType {
