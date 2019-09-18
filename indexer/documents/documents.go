@@ -8,7 +8,7 @@ import (
 	"github.com/aergoio/aergo-indexer/indexer/category"
 )
 
-// DocType is an interface for structs to be used as ES documents
+// DocType is an interface for structs to be used as database documents
 type DocType interface {
 	GetID() string
 	SetID(string)
@@ -29,7 +29,7 @@ func (m BaseEsType) SetID(id string) {
 	m.Id = id
 }
 
-// EsBlock is a block stored in elasticsearch
+// EsBlock is a block stored in the database
 type EsBlock struct {
 	*BaseEsType
 	Timestamp time.Time `json:"ts" db:"ts"`
@@ -38,7 +38,7 @@ type EsBlock struct {
 	Size      int64     `json:"size" db:"size"`
 }
 
-// EsTx is a transaction stored in elasticsearch
+// EsTx is a transaction stored in the database
 type EsTx struct {
 	*BaseEsType
 	Timestamp   time.Time           `json:"ts" db:"ts"`
@@ -52,7 +52,7 @@ type EsTx struct {
 	Category    category.TxCategory `json:"category" db:"category"`
 }
 
-// EsName is a name-address mapping stored in elasticsearch
+// EsName is a name-address mapping stored in the database
 type EsName struct {
 	*BaseEsType
 	Name        string `json:"name" db:"name"`
@@ -140,8 +140,7 @@ var EsMappings = map[string]string{
 	}`,
 }
 
-// SQLSchemas contains schema for SQL backends
-func MapToStr(categories []category.TxCategory) []string {
+func mapCategoriesToStr(categories []category.TxCategory) []string {
 	vsm := make([]string, len(categories))
 	for i, v := range categories {
 		vsm[i] = fmt.Sprintf("'%s'", v)
@@ -149,7 +148,9 @@ func MapToStr(categories []category.TxCategory) []string {
 	return vsm
 }
 
-var categories = strings.Join(MapToStr(category.TxCategories), ",")
+var categories = strings.Join(mapCategoriesToStr(category.TxCategories), ",")
+
+// SQLSchemas contains schema for SQL backends
 var SQLSchemas = map[string]string{
 	"tx": `
 		CREATE TABLE ` + "`" + `%indexName%` + "`" + ` (
