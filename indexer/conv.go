@@ -64,23 +64,37 @@ func (ns *Indexer) encodeAndResolveAccount(account []byte, blockNo uint64) strin
 	return encodeAccount(nameInfo.GetDestination())
 }
 
+// bigIntToFloat takes a big.Int, divides it by 10^exp and returns the resulting float
+// Note that this float is not precise. It can be used for sorting purposes
+func bigIntToFloat(a *big.Int, exp int64) float32 {
+	var y, e = big.NewInt(10), big.NewInt(exp)
+	y.Exp(y, e, nil)
+	z := new(big.Float).Quo(
+		new(big.Float).SetInt(a),
+		new(big.Float).SetInt(y),
+	)
+	f, _ := z.Float32()
+	return f
+}
+
 // ConvTx converts Tx from RPC into Elasticsearch type
 func (ns *Indexer) ConvTx(tx *types.Tx, blockNo uint64) doc.EsTx {
 	account := ns.encodeAndResolveAccount(tx.Body.Account, blockNo)
 	recipient := ns.encodeAndResolveAccount(tx.Body.Recipient, blockNo)
-	amount := big.NewInt(0).SetBytes(tx.GetBody().Amount).String()
+	amount := big.NewInt(0).SetBytes(tx.GetBody().Amount)
 	payload0 := ""
 	if len(tx.Body.Payload) > 0 {
 		payload0 = fmt.Sprintf("%d", tx.Body.Payload[0])
 	}
 	doc := doc.EsTx{
-		BaseEsType: &doc.BaseEsType{base58.Encode(tx.Hash)},
-		Account:    account,
-		Recipient:  recipient,
-		Amount:     amount,
-		Type:       fmt.Sprintf("%d", tx.Body.Type),
-		Payload0:   payload0,
-		Category:   category.DetectTxCategory(tx),
+		BaseEsType:  &doc.BaseEsType{base58.Encode(tx.Hash)},
+		Account:     account,
+		Recipient:   recipient,
+		Amount:      amount.String(),
+		AmountFloat: bigIntToFloat(amount, 18),
+		Type:        fmt.Sprintf("%d", tx.Body.Type),
+		Payload0:    payload0,
+		Category:    category.DetectTxCategory(tx),
 	}
 	return doc
 }

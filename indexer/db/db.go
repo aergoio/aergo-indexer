@@ -2,6 +2,11 @@ package db
 
 import (
 	doc "github.com/aergoio/aergo-indexer/indexer/documents"
+	"github.com/aergoio/aergo-lib/log"
+)
+
+var (
+	logger = log.NewLogger("db")
 )
 
 type UpdateParams struct {
@@ -39,7 +44,7 @@ type DbController interface {
 	InsertBulk(documentChannel chan doc.DocType, params UpdateParams) (uint64, error)
 	Delete(params QueryParams) (uint64, error)
 	Count(params QueryParams) (int64, error)
-	SelectOne(params QueryParams, document doc.DocType) error
+	SelectOne(params QueryParams, createDocument CreateDocFunction) (doc.DocType, error)
 	Scroll(params QueryParams, createDocument CreateDocFunction) ScrollInstance
 	GetExistingIndexPrefix(aliasName string, documentType string) (bool, string, error)
 	CreateIndex(indexName string, documentType string) error

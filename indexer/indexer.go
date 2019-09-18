@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sync"
 	"time"
 
 	"github.com/aergoio/aergo-indexer/indexer/db"
@@ -27,7 +28,10 @@ type Indexer struct {
 	reindexing      bool
 	exitOnComplete  bool
 	State           string
+	BulkState       string
 	stream          types.AergoRPCService_ListBlockStreamClient
+	startFrom       int64
+	stopAt          int64
 }
 
 // NewIndexer creates new Indexer instance
@@ -54,9 +58,12 @@ func NewIndexer(logger *log.Logger, dbType string, dbURL string, namePrefix stri
 		lastBlockHeight: 0,
 		lastBlockHash:   "",
 		State:           "booting",
+		BulkState:       "finished",
 		log:             logger,
 		reindexing:      false,
 		exitOnComplete:  false,
+		startFrom:       0,
+		stopAt:          -1,
 	}
 	return svc, nil
 }
@@ -119,20 +126,20 @@ func (ns *Indexer) UpdateAliasForType(documentType string) {
 
 // OnSyncComplete is called when sync is finished catching up
 func (ns *Indexer) OnSyncComplete() {
-	ns.log.Info().Msg("Initial sync complete")
 	if ns.reindexing {
 		ns.reindexing = false
 		ns.UpdateAliasForType("tx")
 		ns.UpdateAliasForType("block")
 		ns.UpdateAliasForType("name")
-		if ns.exitOnComplete {
-			ns.Stop()
-		}
+	}
+	ns.log.Info().Msg("Initial sync complete")
+	if ns.exitOnComplete {
+		ns.Stop()
 	}
 }
 
 // Start setups the indexer
-func (ns *Indexer) Start(grpcClient types.AergoRPCServiceClient, reindex bool, exitOnComplete bool) error {
+func (ns *Indexer) Start(grpcClient types.AergoRPCServiceClient, reindex bool, exitOnComplete bool, startFrom int64, stopAt int64) error {
 	ns.grpcClient = grpcClient
 
 	if reindex {
@@ -146,6 +153,12 @@ func (ns *Indexer) Start(grpcClient types.AergoRPCServiceClient, reindex bool, e
 	ns.CreateIndexIfNotExists("name")
 	ns.UpdateLastBlockHeightFromDb()
 	ns.log.Info().Uint64("last block height", ns.lastBlockHeight).Msg("Started Indexer")
+
+	ns.startFrom = startFrom
+	ns.stopAt = stopAt
+	if startFrom != 0 || stopAt != -1 {
+		ns.log.Info().Int64("startFrom", startFrom).Int64("stopAt", stopAt).Msg("Only index block number range")
+	}
 
 	go ns.CheckConsistency()
 
@@ -241,25 +254,40 @@ func (ns *Indexer) SyncBlock(block *types.Block) {
 	ns.lastBlockHash = newHash
 	ns.lastBlockHeight = newHeight
 
+	// Check specified sync range
+	if newHeight < uint64(ns.startFrom) {
+		ns.log.Info().Uint64("blockNumber", newHeight).Int64("startFrom", ns.startFrom).Msg("Skipping block before specified sync range")
+		return
+	}
+	if ns.stopAt != -1 && newHeight > uint64(ns.stopAt) {
+		ns.log.Info().Uint64("blockNumber", newHeight).Int64("stopAt", ns.stopAt).Msg("Reached end of specified sync range")
+		//ns.OnSyncComplete()
+		ns.Stop()
+		return
+	}
+
 	// Index new block
 	go ns.IndexBlock(block)
 }
 
 // GetBestBlockFromDb retrieves the current best block from the db
 func (ns *Indexer) GetBestBlockFromDb() (*doc.EsBlock, error) {
-	block := new(doc.EsBlock)
-	err := ns.db.SelectOne(db.QueryParams{
+	block, err := ns.db.SelectOne(db.QueryParams{
 		IndexName: ns.indexNamePrefix + "block",
 		SortField: "no",
 		SortAsc:   false,
-	}, block)
+	}, func() doc.DocType {
+		block := new(doc.EsBlock)
+		return block
+	})
+
 	if err != nil {
 		return nil, err
 	}
 	if block == nil {
 		return nil, errors.New("best block not found")
 	}
-	return block, nil
+	return block.(*doc.EsBlock), nil
 }
 
 // UpdateLastBlockHeightFromDb updates state from db
@@ -311,7 +339,7 @@ func (ns *Indexer) IndexBlock(block *types.Block) {
 			ns.IndexTxs(block, block.Body.Txs, txChannel, nameChannel)
 			return nil
 		}
-		BulkIndexer(ctx, ns.log, ns.db, txChannel, generator, ns.indexNamePrefix+"tx", "tx", 10000, false)
+		BulkIndexer(ctx, ns.log, ns.db, txChannel, generator, ns.indexNamePrefix+"tx", "tx", 2000, false)
 	}
 
 	ns.log.Info().Uint64("no", block.Header.BlockNo).Int("txs", len(block.Body.Txs)).Str("hash", blockDocument.GetID()).Msg("Indexed block")
@@ -319,25 +347,43 @@ func (ns *Indexer) IndexBlock(block *types.Block) {
 
 // IndexBlocksInRange indexes blocks in the range of [fromBlockheight, toBlockHeight]
 func (ns *Indexer) IndexBlocksInRange(fromBlockHeight uint64, toBlockHeight uint64) {
+	ns.BulkState = "running"
 	ctx := context.Background()
 	channel := make(chan doc.DocType, 1000)
 	done := make(chan struct{})
 	txChannel := make(chan doc.DocType, 20000)
 	nameChannel := make(chan doc.DocType, 5000)
 
+	if fromBlockHeight < uint64(ns.startFrom) {
+		fromBlockHeight = uint64(ns.startFrom)
+	}
+	if toBlockHeight > uint64(ns.stopAt) {
+		toBlockHeight = uint64(ns.stopAt)
+	}
+
+	var wg sync.WaitGroup
+
 	waitForTx := func() error {
 		defer close(txChannel)
 		<-done
 		return nil
 	}
-	go BulkIndexer(ctx, ns.log, ns.db, txChannel, waitForTx, ns.indexNamePrefix+"tx", "tx", 10000, false)
+	go func() {
+		defer wg.Done()
+		BulkIndexer(ctx, ns.log, ns.db, txChannel, waitForTx, ns.indexNamePrefix+"tx", "tx", 2000, false)
+	}()
+	wg.Add(1)
 
 	waitForNames := func() error {
 		defer close(nameChannel)
 		<-done
 		return nil
 	}
-	go BulkIndexer(ctx, ns.log, ns.db, nameChannel, waitForNames, ns.indexNamePrefix+"name", "name", 2500, true)
+	go func() {
+		defer wg.Done()
+		BulkIndexer(ctx, ns.log, ns.db, nameChannel, waitForNames, ns.indexNamePrefix+"name", "name", 2500, true)
+	}()
+	wg.Add(1)
 
 	generator := func() error {
 		defer close(channel)
@@ -365,6 +411,9 @@ func (ns *Indexer) IndexBlocksInRange(fromBlockHeight uint64, toBlockHeight uint
 	}
 	BulkIndexer(ctx, ns.log, ns.db, channel, generator, ns.indexNamePrefix+"block", "block", 500, false)
 
+	// Wait for tx and name goroutines
+	wg.Wait()
+	ns.BulkState = "finished"
 	ns.OnSyncComplete()
 }
 

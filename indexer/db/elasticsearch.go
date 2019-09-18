@@ -86,11 +86,12 @@ func (esdb *ElasticsearchDbController) InsertBulk(documentChannel chan doc.DocTy
 	var total uint64
 	bulk := esdb.Client.Bulk().Index(params.IndexName).Type(params.TypeName)
 
+	begin := time.Now()
 	commitBulk := func() error {
 		res, err := bulk.Do(ctx)
-		//dur := time.Since(begin).Seconds()
-		//pps := int64(float64(total) / dur)
-		//logger.Info().Int("chunkSize", chunkSize).Uint64("total", total).Int64("perSecond", pps).Msg(fmt.Sprintf("Commiting bulk chunk %ss", typeName))
+		dur := time.Since(begin).Seconds()
+		pps := int64(float64(total) / dur)
+		logger.Info().Int("chunkSize", params.Size).Uint64("total", total).Int64("perSecond", pps).Str("indexName", params.IndexName).Msg("Comitted bulk chunk")
 		if err == nil {
 			err = getFirstError(res)
 		}
@@ -155,29 +156,30 @@ func (esdb *ElasticsearchDbController) Count(params QueryParams) (int64, error) 
 }
 
 // SelectOne selects a single document
-func (esdb *ElasticsearchDbController) SelectOne(params QueryParams, document doc.DocType) error {
+func (esdb *ElasticsearchDbController) SelectOne(params QueryParams, createDocument CreateDocFunction) (doc.DocType, error) {
 	ctx := context.Background()
 	query := elastic.NewMatchAllQuery()
 	res, err := esdb.Client.Search().Index(params.IndexName).Query(query).Sort(params.SortField, params.SortAsc).From(params.From).Size(1).Do(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if res == nil || res.TotalHits() == 0 || len(res.Hits.Hits) == 0 {
-		return nil
+		return nil, nil
 	}
 	// Unmarshall document
 	hit := res.Hits.Hits[0]
+	document := createDocument()
 	if err := json.Unmarshal(*hit.Source, document); err != nil {
-		return err
+		return nil, err
 	}
 	document.SetID(hit.Id)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return document, nil
 }
 
-// UpdateAlias updates an alias with a new index name
+// UpdateAlias updates an alias with a new index name and delete stale indices
 func (esdb *ElasticsearchDbController) UpdateAlias(aliasName string, indexName string) error {
 	ctx := context.Background()
 	svc := esdb.Client.Alias()

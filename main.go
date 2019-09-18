@@ -30,6 +30,8 @@ var (
 	dbType          string
 	indexNamePrefix string
 	aergoAddress    string
+	startFrom       int32
+	stopAt          int32
 
 	logger *log.Logger
 
@@ -47,6 +49,8 @@ func init() {
 	fs.StringVarP(&dbURL, "dburl", "D", "http://localhost:8086", "URL of InfluxDB server")
 	fs.StringVarP(&dbType, "dbtype", "T", "es", "Type of database used (es, mariadb)")
 	fs.StringVarP(&indexNamePrefix, "prefix", "X", "chain_", "prefix used for index names")
+	fs.Int32VarP(&startFrom, "from", "", 0, "start syncing from this block number")
+	fs.Int32VarP(&stopAt, "to", "", -1, "stop syncing at this block number")
 }
 
 func main() {
@@ -66,7 +70,7 @@ func rootRun(cmd *cobra.Command, args []string) {
 	}
 	client = waitForClient(getServerAddress())
 
-	err = indexer.Start(client, reindexingMode, exitOnComplete)
+	err = indexer.Start(client, reindexingMode, exitOnComplete, int64(startFrom), int64(stopAt))
 	if err != nil {
 		logger.Warn().Err(err).Str("dbURL", dbURL).Msg("Could not start indexer")
 		return
@@ -78,7 +82,7 @@ func rootRun(cmd *cobra.Command, args []string) {
 
 	for {
 		if exitOnComplete {
-			if indexer.State == "stopped" {
+			if indexer.State == "stopped" && indexer.BulkState == "finished" {
 				break
 			}
 			time.Sleep(time.Second)

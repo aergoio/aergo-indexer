@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strings"
 	"sync/atomic"
+	"time"
 
 	doc "github.com/aergoio/aergo-indexer/indexer/documents"
 	// import mysql driver
@@ -43,7 +44,7 @@ func prepareFieldsAndBinds(document doc.DocType) ([]string, []string) {
 		if tag == "" {
 			continue
 		}
-		fields = append(fields, tag)
+		fields = append(fields, "`"+tag+"`")
 		binds = append(binds, ":"+tag)
 	}
 	return fields, binds
@@ -59,6 +60,14 @@ func prepareSelectFields(fields []string) string {
 		fieldStr = strings.Join(quotedFields, ",")
 	}
 	return fieldStr
+}
+
+func booleanSortOrderToSql(orderAsc bool) string {
+	sortOrder := "DESC"
+	if orderAsc {
+		sortOrder = "ASC"
+	}
+	return sortOrder
 }
 
 // Insert inserts a single document using the updata params
@@ -92,17 +101,21 @@ func (mdb MariaDbController) InsertBulk(documentChannel chan doc.DocType, params
 	var total uint64
 	var bulk []doc.DocType
 
+	begin := time.Now()
 	commitBulk := func(bulk []doc.DocType) error {
 		if len(bulk) == 0 {
 			return nil
 		}
 		result, err := mdb.Client.NamedExec(query, bulk)
 		if err != nil {
-			fmt.Printf("Error while inserting bulk: %+v\n", err)
+			logger.Error().Err(err).Int("chunkSize", params.Size).Str("indexName", params.IndexName).Msg("Error while committing bulk")
 			return err
 		}
 		rowsAffected, _ := result.RowsAffected()
 		atomic.AddUint64(&total, uint64(rowsAffected))
+		dur := time.Since(begin).Seconds()
+		pps := int64(float64(total) / dur)
+		logger.Info().Int("chunkSize", params.Size).Uint64("total", total).Int64("perSecond", pps).Str("indexName", params.IndexName).Msg("Comitted bulk chunk")
 		return nil
 	}
 
@@ -150,24 +163,30 @@ func (mdb *MariaDbController) Count(params QueryParams) (int64, error) {
 }
 
 // SelectOne selects a single document
-func (mdb *MariaDbController) SelectOne(params QueryParams, document doc.DocType) error {
-	sortOrder := "DESC"
-	if params.SortAsc {
-		sortOrder = "ASC"
-	}
-	fields := prepareSelectFields(params.SelectFields)
-	query := fmt.Sprintf("SELECT %s FROM `%s` ORDER BY `%s` %s LIMIT 1", fields, params.IndexName, params.SortField, sortOrder)
+func (mdb *MariaDbController) SelectOne(params QueryParams, createDocument CreateDocFunction) (doc.DocType, error) {
+	query := fmt.Sprintf(
+		"SELECT %s FROM `%s` ORDER BY `%s` %s LIMIT 1",
+		prepareSelectFields(params.SelectFields),
+		params.IndexName,
+		params.SortField,
+		booleanSortOrderToSql(params.SortAsc),
+	)
+	document := createDocument()
 	err := mdb.Client.Get(document, query)
-	if err != nil {
-		return err
+	if err == sql.ErrNoRows {
+		return nil, nil
 	}
-	return nil
+	if err != nil {
+		return nil, err
+	}
+	return document, nil
 }
 
-// UpdateAlias updates an alias with a new index name
+// UpdateAlias updates an alias with a new index name and delete stale indices
 func (mdb *MariaDbController) UpdateAlias(aliasName string, indexName string) error {
-	query := fmt.Sprintf("CREATE OR REPLACE VIEW %s AS SELECT * FROM `%s`;", aliasName, indexName)
+	query := fmt.Sprintf("CREATE OR REPLACE VIEW `%s` AS SELECT * FROM `%s`;", aliasName, indexName)
 	_, err := mdb.Client.Exec(query)
+	// TODO: Delete old tables
 	return err
 }
 
@@ -219,9 +238,8 @@ func (mdb *MariaDbController) Scroll(params QueryParams, createDocument CreateDo
 
 // MariaScrollInstance is an instance of a scroll for ES
 type MariaScrollInstance struct {
-	result  *sqlx.Rows
-	current int
-	//currentLength  int
+	result         *sqlx.Rows
+	current        int
 	currentFrom    int
 	ctx            context.Context
 	createDocument CreateDocFunction
@@ -231,30 +249,26 @@ type MariaScrollInstance struct {
 
 // Next returns the next document of a scroll or io.EOF
 func (scroll *MariaScrollInstance) Next() (doc.DocType, error) {
-	// Load next part of scroll
+	// Query next page of results
 	hasNext := scroll.result != nil && scroll.result.Next()
-	if scroll.result == nil || !hasNext && scroll.current >= scroll.params.Size {
-		sortOrder := "DESC"
-		if scroll.params.SortAsc {
-			sortOrder = "ASC"
-		}
-		fields := prepareSelectFields(scroll.params.SelectFields)
+	finishedCurrentPage := !hasNext && scroll.current >= scroll.params.Size
+	if scroll.result == nil || finishedCurrentPage {
 		query := fmt.Sprintf(
 			"SELECT %s FROM `%s` ORDER BY `%s` %s LIMIT %d, %d",
-			fields,
+			prepareSelectFields(scroll.params.SelectFields),
 			scroll.params.IndexName,
 			scroll.params.SortField,
-			sortOrder,
+			booleanSortOrderToSql(scroll.params.SortAsc),
 			scroll.currentFrom,
 			scroll.params.Size,
 		)
-		scroll.currentFrom += scroll.params.Size
 		result, err := scroll.client.Queryx(query)
 		if err != nil {
-			return nil, err // returns io.EOF when scroll is done
+			return nil, err
 		}
 		scroll.result = result
 		scroll.current = 0
+		scroll.currentFrom += scroll.params.Size
 	}
 
 	// Return next document
