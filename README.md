@@ -1,6 +1,6 @@
 # Aergo Metadata Indexer
 
-This is a go program that connects to aergo server over RPC and synchronizes blockchain metadata with a database. It currently supports Elastic Search and MySQL/MariaDB.
+This is a go program that connects to aergo server over RPC and synchronizes blockchain metadata with a database. It currently supports Elasticsearch and MySQL/MariaDB.
 
 This creates the indices `block`, `tx`, and `name` (with a prefix). These are actually aliases that point to the latest version of the data.
 Check [esindexer/types.go](./esindexer/types.go) for the exact index mappings.
@@ -10,7 +10,7 @@ Check [esindexer/types.go](./esindexer/types.go) for the exact index mappings.
 Blocks
 ```
 Field    Type        Comment
-_id      string      block hash
+id       string      block hash
 ts       timestamp   block creation timestamp
 no       uint64      block number
 txs      uint        number of transactions
@@ -18,24 +18,25 @@ txs      uint        number of transactions
 
 Transaction
 ```
-Field    Type        Comment
-_id      string      tx hash
-ts       timestamp   block creation timestamp
-blockno  uint64      block number
-from     string
-to       string
-amount   string
-type     string      "0" or "1"
-payload0 byte        first byte of payload
-category string      user-friendly category
+Field          Type        Comment
+id             string      tx hash
+ts             timestamp   block creation timestamp
+blockno        uint64      block number
+from           string      from address (base58check encoded)
+to             string      to address (base58check encoded)
+amount         string      Precise BigInt string representation of amount
+amount_float   f32         Imprecise float representation of amount, useful for sorting
+type           string      "0" or "1"
+payload0       byte        first byte of payload
+category       string      user-friendly category
 ```
 
 Names
 ```
 Field    Type        Comment
-_id      string      name + tx hash
+id       string      name + tx hash
 name     string
-address  string
+address  string      address (base58check encoded)
 blockno  uint64      block in which name was updated
 tx       string      tx in which name was updated
 ```
@@ -47,6 +48,26 @@ tx       string      tx in which name was updated
     make
 
 ## Usage
+
+```
+Usage:
+  indexer [flags]
+
+Flags:
+  -A, --aergo string       host and port of aergo server. Alternative to setting host and port separately.
+  -T, --dbtype string      Type of database used (elastic, mariadb) (default "elastic")
+  -D, --dburl string       Database URL (default "http://localhost:9200")
+      --exit-on-complete   exit when reindexing sync completes for the first time
+      --from int32         start syncing from this block number
+  -h, --help               help for indexer
+  -H, --host string        host address of aergo server (default "localhost")
+  -p, --port int32         port number of aergo server (default 7845)
+  -X, --prefix string      prefix used for index names (default "chain_")
+      --reindex            reindex blocks from genesis and swap index after catching up
+      --to int32           stop syncing at this block number (default -1)
+```
+
+Example
 
     ./bin/indexer -H localhost -p 7845 --dburl http://localhost:9200 --prefix chain_
 

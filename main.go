@@ -17,7 +17,7 @@ import (
 
 var (
 	rootCmd = &cobra.Command{
-		Use:   "aergoindexer",
+		Use:   "indexer",
 		Short: "Aergo Indexer",
 		Long:  "Aergo Metadata Indexer",
 		Run:   rootRun,
@@ -46,8 +46,8 @@ func init() {
 	fs.StringVarP(&host, "host", "H", "localhost", "host address of aergo server")
 	fs.Int32VarP(&port, "port", "p", 7845, "port number of aergo server")
 	fs.StringVarP(&aergoAddress, "aergo", "A", "", "host and port of aergo server. Alternative to setting host and port separately.")
-	fs.StringVarP(&dbURL, "dburl", "D", "http://localhost:8086", "URL of InfluxDB server")
-	fs.StringVarP(&dbType, "dbtype", "T", "elastic", "Type of database used (es, mariadb)")
+	fs.StringVarP(&dbURL, "dburl", "D", "http://localhost:9200", "Database URL")
+	fs.StringVarP(&dbType, "dbtype", "T", "elastic", "Type of database used (elastic, mariadb)")
 	fs.StringVarP(&indexNamePrefix, "prefix", "X", "chain_", "prefix used for index names")
 	fs.Int32VarP(&startFrom, "from", "", 0, "start syncing from this block number")
 	fs.Int32VarP(&stopAt, "to", "", -1, "stop syncing at this block number")
