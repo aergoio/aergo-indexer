@@ -3,7 +3,7 @@
 This is a go program that connects to aergo server over RPC and synchronizes blockchain metadata with a database. It currently supports Elasticsearch and MySQL/MariaDB.
 
 This creates the indices `block`, `tx`, and `name` (with a prefix). These are actually aliases that point to the latest version of the data.
-Check [esindexer/types.go](./esindexer/types.go) for the exact index mappings.
+Check [indexer/documents/documents.go](./indexer/documents/documents.go) for the exact mappings for all supported databases.
 
 ## Indexed data
 
