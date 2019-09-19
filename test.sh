@@ -17,9 +17,16 @@ docker run -d -p 7845:7845 --name aergo_test aergo/node:1.2 aergosvr --config /a
 echo "Starting esindexer"
 sleep 3
 
-##./bin/esindexer -A testnet.aergo.io:7845 --dbtype mariadb -D "root:my-secret-pw@tcp(localhost:3306)/test" --prefix chain_ --reindex --from 905000 --to 909000 --exit-on-complete
-./bin/esindexer -A testnet.aergo.io:7845 --dbtype mariadb -D "root:my-secret-pw@tcp(localhost:3306)/test" --prefix chain_ --reindex --from 0 --to 4499 --exit-on-complete
-#./bin/esindexer -A testnet.aergo.io:7845 --dbtype es -D "http://localhost:9200" --prefix chain_ --reindex --from 0 --to 4499 --exit-on-complete
+#AERGO_URL="localhost:7845"
+AERGO_URL="testnet.aergo.io:7845"
+ES_URL="http://localhost:9200"
+MARIADB_URL="root:my-secret-pw@tcp(localhost:3306)/test"
+CHAIN_PREFIX="chain_"
+SYNC_FROM=0
+SYNC_TO=9999
+
+time ./bin/esindexer -A $AERGO_URL --dbtype mariadb -D $MARIADB_URL --prefix $CHAIN_PREFIX --from $SYNC_FROM --to $SYNC_TO --exit-on-complete --reindex 
+time ./bin/esindexer -A $AERGO_URL --dbtype elastic -D $ES_URL --prefix $CHAIN_PREFIX --from $SYNC_FROM --to $SYNC_TO --exit-on-complete --reindex 
 
 #./bin/esindexer -H localhost -p 7845 --dbtype mariadb -D "root:my-secret-pw@tcp(localhost:3306)/test" --prefix chain_
 #./bin/esindexer -H localhost -p 7845 -D http://localhost:9200 --prefix chain_

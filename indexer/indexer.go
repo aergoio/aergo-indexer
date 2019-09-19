@@ -40,7 +40,7 @@ func NewIndexer(logger *log.Logger, dbType string, dbURL string, namePrefix stri
 	var dbController db.DbController
 	var err error
 	switch dbType {
-	case "es":
+	case "elastic":
 		dbController, err = db.NewElasticsearchDbController(dbURL)
 	case "mariadb":
 		dbController, err = db.NewMariaDbController(dbURL)
@@ -160,7 +160,9 @@ func (ns *Indexer) Start(grpcClient types.AergoRPCServiceClient, reindex bool, e
 		ns.log.Info().Int64("startFrom", startFrom).Int64("stopAt", stopAt).Msg("Only index block number range")
 	}
 
-	go ns.CheckConsistency()
+	if !ns.reindexing {
+		go ns.CheckConsistency()
+	}
 
 	if ns.reindexing {
 		// Don't wait for sync to start when blockchain is booting from genesis
