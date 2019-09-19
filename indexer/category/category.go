@@ -30,7 +30,7 @@ const (
 )
 
 // TxCategories is the list of available categories in order of increasing weight
-var TxCategories = []TxCategory{None, Payload, Call, Governance, System, Staking, Voting, Name, Enterprise, Conf, Cluster, Deploy, Redeploy}
+var TxCategories = []TxCategory{None, Payload, Call, Governance, System, Staking, Voting, Name, NameCreate, NameUpdate, Enterprise, Conf, Cluster, Deploy, Redeploy}
 
 // DetectTxCategory by performing a cascade of checks with fallbacks
 func DetectTxCategory(tx *types.Tx) TxCategory {
