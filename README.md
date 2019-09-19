@@ -14,6 +14,7 @@ id       string      block hash
 ts       timestamp   block creation timestamp
 no       uint64      block number
 txs      uint        number of transactions
+size     uint64      block size in bytes
 ```
 
 Transaction
@@ -40,12 +41,6 @@ address  string      address (base58check encoded)
 blockno  uint64      block in which name was updated
 tx       string      tx in which name was updated
 ```
-
-## Build
-
-    go get github.com/aergoio/aergo-indexer
-    cd $GOPATH/src/github.com/aergoio/aergo-indexer
-    make
 
 ## Usage
 
@@ -83,7 +78,17 @@ When reindexing, this creates new indices to sync the blockchain from scratch.
 After catching up, the aliases are replaced with the new data and the old indices removed.
 This means the old data can still be accessed until the sync is complete.
 
+## Build
+
+    go get github.com/aergoio/aergo-indexer
+    cd $GOPATH/src/github.com/aergoio/aergo-indexer
+    make
+
+Requires Go Modules (`GO111MODULE=on`)
+
 ## Build and run using Docker
 
     docker build -t aergo/indexer .
     docker run aergo/indexer indexer -A ip:7845 -E ip:9200 --prefix chain_
+
+[Automatic latest build from master on Docker Hub](http://hub.docker.com/r/aergo/indexer)
