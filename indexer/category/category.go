@@ -3,8 +3,8 @@ package category
 import (
 	"strings"
 
-	"github.com/aergoio/aergo-esindexer/esindexer/transaction"
-	"github.com/aergoio/aergo-esindexer/types"
+	"github.com/aergoio/aergo-indexer/indexer/transaction"
+	"github.com/aergoio/aergo-indexer/types"
 )
 
 // TxCategory is a user-friendly categorization of a transaction
@@ -30,7 +30,7 @@ const (
 )
 
 // TxCategories is the list of available categories in order of increasing weight
-var TxCategories = []TxCategory{None, Payload, Call, Governance, System, Staking, Voting, Name, Enterprise, Conf, Cluster, Deploy, Redeploy}
+var TxCategories = []TxCategory{None, Payload, Call, Governance, System, Staking, Voting, Name, NameCreate, NameUpdate, Enterprise, Conf, Cluster, Deploy, Redeploy}
 
 // DetectTxCategory by performing a cascade of checks with fallbacks
 func DetectTxCategory(tx *types.Tx) TxCategory {

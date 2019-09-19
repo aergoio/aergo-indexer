@@ -1,6 +1,6 @@
-# Aergo Metadata Indexer for Elasticsearch
+# Aergo Metadata Indexer
 
-This is a go program that connects to aergo server over RPC and synchronizes blockchain metadata with an Elasticsearch cluster.
+This is a go program that connects to aergo server over RPC and synchronizes blockchain metadata with a database. It currently supports Elastic Search and MySQL/MariaDB.
 
 This creates the indices `block`, `tx`, and `name` (with a prefix). These are actually aliases that point to the latest version of the data.
 Check [esindexer/types.go](./esindexer/types.go) for the exact index mappings.
@@ -42,15 +42,13 @@ tx       string      tx in which name was updated
 
 ## Build
 
-You need Glide to install dependencies.
-
-    go get github.com/aergoio/aergo-esindexer
-    cd $GOPATH/src/github.com/aergoio/aergo-esindexer
-    make all
+    go get github.com/aergoio/aergo-indexer
+    cd $GOPATH/src/github.com/aergoio/aergo-indexer
+    make
 
 ## Usage
 
-    ./bin/esindexer -H localhost -p 7845 --esurl http://localhost:9200 --prefix chain_
+    ./bin/indexer -H localhost -p 7845 --dburl http://localhost:9200 --prefix chain_
 
 You can use the `--prefix` parameter and multiple instances of this program to sync several blockchains with one database.
 
@@ -58,7 +56,7 @@ Instead of setting host and port of the aergo server separately, you can also pa
 
 To reindex (starting from scratch):
 
-    ./bin/esindexer --reindex
+    ./bin/indexer --reindex
 
 When reindexing, this creates new indices to sync the blockchain from scratch.
 After catching up, the aliases are replaced with the new data and the old indices removed.
@@ -66,5 +64,5 @@ This means the old data can still be accessed until the sync is complete.
 
 ## Build and run using Docker
 
-    docker build -t aergo/esindexer .
-    docker run aergo/esindexer esindexer -A ip:7845 -E ip:9200 --prefix chain_
+    docker build -t aergo/indexer .
+    docker run aergo/indexer indexer -A ip:7845 -E ip:9200 --prefix chain_
