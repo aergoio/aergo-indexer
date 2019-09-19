@@ -1,4 +1,4 @@
-module indexer
+module github.com/aergoio/aergo-indexer
 
 go 1.12
 

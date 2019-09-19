@@ -1,8 +1,14 @@
 FROM golang:1.12-alpine3.9 as builder
 RUN apk update && apk add git glide build-base
 ENV GOPATH $HOME/go
-ADD . ${GOPATH}/src/github.com/aergoio/aergo-indexer
+ENV GO111MODULE=on
 WORKDIR ${GOPATH}/src/github.com/aergoio/aergo-indexer
+
+ADD go.mod .
+ADD go.sum .
+RUN go mod download
+
+ADD . .
 RUN make all
 
 FROM alpine:3.9
