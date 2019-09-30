@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"io"
 	"reflect"
@@ -12,6 +13,7 @@ import (
 	"time"
 
 	doc "github.com/aergoio/aergo-indexer/indexer/documents"
+
 	// import mysql driver
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
@@ -147,8 +149,25 @@ func (mdb MariaDbController) InsertBulk(documentChannel chan doc.DocType, params
 
 // Delete removes documents specified by the query params
 func (mdb *MariaDbController) Delete(params QueryParams) (uint64, error) {
-	// TODO
-	return 0, nil
+	where := ""
+	if params.IntegerRange != nil {
+		where = fmt.Sprintf(
+			"WHERE `%s` >= %d AND `%s` <= %d",
+			params.IntegerRange.Field, params.IntegerRange.Min,
+			params.IntegerRange.Field, params.IntegerRange.Max,
+		)
+	}
+	if params.StringMatch != nil {
+		return 0, errors.New("Delete is not imlemented for string matches")
+	}
+
+	query := fmt.Sprintf("DELETE FROM `%s` %s", params.IndexName, where)
+	result, err := mdb.Client.Exec(query)
+	if err != nil {
+		return 0, err
+	}
+	rowsAffected, _ := result.RowsAffected()
+	return uint64(rowsAffected), nil
 }
 
 // Count returns the number of indexed documents

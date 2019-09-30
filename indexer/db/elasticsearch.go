@@ -138,7 +138,7 @@ func (esdb *ElasticsearchDbController) Delete(params QueryParams) (uint64, error
 		query = elastic.NewRangeQuery(params.IntegerRange.Field).From(params.IntegerRange.Min).To(params.IntegerRange.Max)
 	}
 	if params.StringMatch != nil {
-		// Not implemented
+		return 0, errors.New("Delete is not imlemented for string matches")
 	}
 
 	ctx := context.Background()
