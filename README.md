@@ -51,7 +51,7 @@ Usage:
 Flags:
   -A, --aergo string       host and port of aergo server. Alternative to setting host and port separately.
   -T, --dbtype string      Type of database used (elastic, mariadb) (default "elastic")
-  -D, --dburl string       Database URL (default "http://localhost:9200")
+  -E, --dburl string       Database URL (default "http://localhost:9200")
       --exit-on-complete   exit when reindexing sync completes for the first time
       --from int32         start syncing from this block number
   -h, --help               help for indexer

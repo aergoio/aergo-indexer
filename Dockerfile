@@ -14,4 +14,5 @@ RUN make all
 FROM alpine:3.9
 RUN apk add libgcc
 COPY --from=builder $HOME/go/src/github.com/aergoio/aergo-indexer/bin/* /usr/local/bin/
+ADD arglog.toml $HOME
 CMD ["indexer"]
