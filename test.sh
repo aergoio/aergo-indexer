@@ -4,7 +4,7 @@ VERSION=${VERSION:=6.4.0}
 #docker rm -f es_test
 #docker rm -f aergo_test
 
-#echo "Starting elasticsearch"
+echo "Starting elasticsearch"
 docker run -d -p 9200:9200 --name es_test -e "http.host=0.0.0.0" -e "transport.host=127.0.0.1" -e "bootstrap.memory_lock=true" -e "ES_JAVA_OPTS=-Xms1g -Xmx1g" docker.elastic.co/elasticsearch/elasticsearch-oss:$VERSION elasticsearch -Enetwork.host=_local_,_site_ -Enetwork.publish_host=_local_
 
 echo "Starting mariadb"
@@ -25,13 +25,13 @@ CHAIN_PREFIX="chain_"
 SYNC_FROM=0
 SYNC_TO=9999
 
-#time ./bin/indexer -A $AERGO_URL --dbtype mariadb -D $MARIADB_URL --prefix $CHAIN_PREFIX --from $SYNC_FROM --to $SYNC_TO --exit-on-complete --reindex 
-#time ./bin/indexer -A $AERGO_URL --dbtype elastic -D $ES_URL --prefix $CHAIN_PREFIX --from $SYNC_FROM --to $SYNC_TO --exit-on-complete --reindex 
+#time ./bin/indexer -A $AERGO_URL --dbtype mariadb --dburl $MARIADB_URL --prefix $CHAIN_PREFIX --from $SYNC_FROM --to $SYNC_TO --exit-on-complete --reindex 
+#time ./bin/indexer -A $AERGO_URL --dbtype elastic --dburl $ES_URL --prefix $CHAIN_PREFIX --from $SYNC_FROM --to $SYNC_TO --exit-on-complete --reindex 
 
-./bin/indexer -H localhost -p 7845 --dbtype mariadb -D "root:my-secret-pw@tcp(localhost:3306)/test" --prefix chain_
-#./bin/indexer -H localhost -p 7845 -D http://localhost:9200 --prefix chain_
-# ./bin/indexer -H localhost -p 7845 -D http://localhost:9200 --prefix chain_ --reindex
-#./bin/indexer -H localhost -p 7845 -D http://localhost:9200 -A testnet.aergo.io:7845 --reindex --prefix chain_
+./bin/indexer -H localhost -p 7845 --dbtype mariadb --dburl "root:my-secret-pw@tcp(localhost:3306)/test" --prefix chain_
+#./bin/indexer -H localhost -p 7845 --dburl http://localhost:9200 --prefix chain_
+# ./bin/indexer -H localhost -p 7845 --dburl http://localhost:9200 --prefix chain_ --reindex
+#./bin/indexer -H localhost -p 7845 --dburl http://localhost:9200 -A testnet.aergo.io:7845 --reindex --prefix chain_
 # docker rm -f es_test
 # docker rm -f aergo_test
 # docker rm -f mariadb_test
