@@ -16,7 +16,7 @@ type DocType interface {
 
 // BaseEsType implements DocType and contains the document's id
 type BaseEsType struct {
-	Id string `db:"id"`
+	Id string `json:"-" db:"id"`
 }
 
 // GetID returns the document's id
@@ -48,7 +48,6 @@ type EsTx struct {
 	Amount      string              `json:"amount" db:"amount"`             // string of BigInt
 	AmountFloat float32             `json:"amount_float" db:"amount_float"` // float for sorting
 	Type        string              `json:"type" db:"type"`
-	Payload0    string              `json:"payload0" db:"payload0"` // first byte of payload
 	Category    category.TxCategory `json:"category" db:"category"`
 }
 
@@ -80,15 +79,12 @@ var EsMappings = map[string]string{
 						"type": "keyword"
 					},
 					"amount": {
-						"type": "keyword"
+						"enabled": false
 					},
 					"amount_float": {
 						"type": "float"
 					},
 					"type": {
-						"type": "keyword"
-					},
-					"payload0": {
 						"type": "keyword"
 					},
 					"category": {

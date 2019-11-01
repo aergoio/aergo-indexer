@@ -82,10 +82,6 @@ func (ns *Indexer) ConvTx(tx *types.Tx, blockNo uint64) doc.EsTx {
 	account := ns.encodeAndResolveAccount(tx.Body.Account, blockNo)
 	recipient := ns.encodeAndResolveAccount(tx.Body.Recipient, blockNo)
 	amount := big.NewInt(0).SetBytes(tx.GetBody().Amount)
-	payload0 := ""
-	if len(tx.Body.Payload) > 0 {
-		payload0 = fmt.Sprintf("%d", tx.Body.Payload[0])
-	}
 	doc := doc.EsTx{
 		BaseEsType:  &doc.BaseEsType{base58.Encode(tx.Hash)},
 		Account:     account,
@@ -93,7 +89,6 @@ func (ns *Indexer) ConvTx(tx *types.Tx, blockNo uint64) doc.EsTx {
 		Amount:      amount.String(),
 		AmountFloat: bigIntToFloat(amount, 18),
 		Type:        fmt.Sprintf("%d", tx.Body.Type),
-		Payload0:    payload0,
 		Category:    category.DetectTxCategory(tx),
 	}
 	return doc
