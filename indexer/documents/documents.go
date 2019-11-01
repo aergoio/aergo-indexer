@@ -158,7 +158,6 @@ var SQLSchemas = map[string]string{
 			amount VARCHAR(30) NOT NULL,
 			amount_float FLOAT(23) NOT NULL,
 			type CHAR(1) NOT NULL,
-			payload0 CHAR(1),
 			category ENUM(` + categories + `),
 			PRIMARY KEY (id),
 			INDEX tx_from (` + "`" + `from` + "`" + `(10)),

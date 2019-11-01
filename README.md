@@ -28,7 +28,6 @@ to             string      to address (base58check encoded)
 amount         string      Precise BigInt string representation of amount
 amount_float   f32         Imprecise float representation of amount, useful for sorting
 type           string      "0" or "1"
-payload0       byte        first byte of payload
 category       string      user-friendly category
 ```
 
