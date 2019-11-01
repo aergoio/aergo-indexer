@@ -37,6 +37,7 @@ func (ns *Indexer) CheckConsistency() {
 		SortAsc:      true,
 	}, func() doc.DocType {
 		block := new(esBlockNo)
+		block.BaseEsType = new(doc.BaseEsType)
 		return block
 	})
 

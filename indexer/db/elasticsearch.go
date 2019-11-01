@@ -217,9 +217,8 @@ func (esdb *ElasticsearchDbController) GetExistingIndexPrefix(aliasName string, 
 	if len(indices) > 0 {
 		indexNamePrefix := strings.TrimRight(indices[0], documentType)
 		return true, indexNamePrefix, nil
-	} else {
-		return false, "", nil
 	}
+	return false, "", nil
 }
 
 // CreateIndex creates index according to documentType definition
@@ -275,9 +274,10 @@ func (scroll *EsScrollInstance) Next() (doc.DocType, error) {
 		scroll.current++
 
 		unmarshalled := scroll.createDocument()
-		if err := json.Unmarshal(*doc.Source, doc); err != nil {
+		if err := json.Unmarshal(*doc.Source, unmarshalled); err != nil {
 			return nil, err
 		}
+		unmarshalled.SetID(doc.Id)
 		return unmarshalled, nil
 	}
 

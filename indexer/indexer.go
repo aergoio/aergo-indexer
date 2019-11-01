@@ -280,6 +280,7 @@ func (ns *Indexer) GetBestBlockFromDb() (*doc.EsBlock, error) {
 		SortAsc:   false,
 	}, func() doc.DocType {
 		block := new(doc.EsBlock)
+		block.BaseEsType = new(doc.BaseEsType)
 		return block
 	})
 
