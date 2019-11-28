@@ -77,7 +77,7 @@ func DetectTxCategory(tx *types.Tx) TxCategory {
 			if strings.HasSuffix(txCallName, "stake") || strings.HasSuffix(txCallName, "unstake") {
 				return Staking
 			}
-			if strings.HasSuffix(txCallName, "vote") || strings.HasSuffix(txCallName, "votebp") || strings.HasSuffix(txCallName, "proposal") {
+			if strings.HasSuffix(txCallName, "vote") || strings.HasSuffix(txCallName, "votedao") || strings.HasSuffix(txCallName, "votebp") || strings.HasSuffix(txCallName, "proposal") {
 				return Voting
 			}
 		}
