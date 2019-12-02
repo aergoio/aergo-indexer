@@ -7,7 +7,7 @@ require (
 	github.com/aergoio/aergo-lib v0.0.0-20181112043831-5ddbd01605af
 	github.com/anaskhan96/base58check v0.0.0-20171020155424-fcff33ba49dd
 	github.com/fortytw2/leaktest v1.3.0 // indirect
-	github.com/go-sql-driver/mysql v1.4.1 // indirect
+	github.com/go-sql-driver/mysql v1.4.1
 	github.com/golang/protobuf v1.2.0
 	github.com/google/go-cmp v0.3.1 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect

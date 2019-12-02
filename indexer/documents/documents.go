@@ -32,10 +32,12 @@ func (m BaseEsType) SetID(id string) {
 // EsBlock is a block stored in the database
 type EsBlock struct {
 	*BaseEsType
-	Timestamp time.Time `json:"ts" db:"ts"`
-	BlockNo   uint64    `json:"no" db:"no"`
-	TxCount   uint      `json:"txs" db:"txs"`
-	Size      int64     `json:"size" db:"size"`
+	Timestamp     time.Time `json:"ts" db:"ts"`
+	BlockNo       uint64    `json:"no" db:"no"`
+	TxCount       uint      `json:"txs" db:"txs"`
+	Size          int64     `json:"size" db:"size"`
+	RewardAccount string    `json:"reward_account" db:"reward_account"`
+	RewardAmount  string    `json:"reward_amount" db:"reward_amount"`
 }
 
 // EsTx is a transaction stored in the database
@@ -109,6 +111,12 @@ var EsMappings = map[string]string{
 					},
 					"size": {
 						"type": "long"
+					},
+					"reward_account": {
+						"type": "keyword"
+					},
+					"reward_amount": {
+						"enabled": false
 					}
 				}
 			}
@@ -172,8 +180,11 @@ var SQLSchemas = map[string]string{
 			no INTEGER UNSIGNED NOT NULL,
 			txs MEDIUMINT UNSIGNED NOT NULL,
 			size MEDIUMINT UNSIGNED NOT NULL,
+			reward_account VARCHAR(52),
+			reward_amount VARCHAR(30),
 			PRIMARY KEY (id),
-			INDEX block_no (no)
+			INDEX block_no (no),
+			INDEX reward_account (no)
 		);`,
 	"name": `
 		CREATE TABLE ` + "`" + `%indexName%` + "`" + ` (
