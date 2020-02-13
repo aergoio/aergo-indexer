@@ -9,7 +9,7 @@ require (
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/golang/protobuf v1.3.2
 	github.com/google/go-cmp v0.3.1 // indirect
-	github.com/graup/es-distributed-lock v0.0.0
+	github.com/graup/es-distributed-lock v0.0.1
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jmoiron/sqlx v1.2.1-0.20190826204134-d7d95172beb5
 	github.com/kr/pretty v0.1.0 // indirect
@@ -34,4 +34,4 @@ require (
 )
 
 // For local dev
-replace github.com/graup/es-distributed-lock v0.0.0 => /Users/paulgrau/go/src/github.com/graup/es-distributed-lock
+// replace github.com/graup/es-distributed-lock v0.0.1 => /Users/paulgrau/go/src/github.com/graup/es-distributed-lock
