@@ -5,6 +5,12 @@ This is a go program that connects to aergo server over RPC and synchronizes blo
 This creates the indices `block`, `tx`, and `name` (with a prefix). These are actually aliases that point to the latest version of the data.
 Check [indexer/documents/documents.go](./indexer/documents/documents.go) for the exact mappings for all supported databases.
 
+When using Elasticsrarch, multiple indexing instances can be run concurrently using these two mechanisms (can be used together):
+- The indexer creates a [time-based lock](https://github.com/graup/es-distributed-lock) in ES, excluding other instances writing to the same data set (enabled by default, depending on --prefix).
+- When a data conflict occurs upon indexing, the indexer can set itself into an idle mode, assuming that another instance is running (enabled by e.g. `--conflict 30`).
+
+Using both mechanisms, you achieve both [efficiency-improving locking](https://martin.kleppmann.com/2016/02/08/how-to-do-distributed-locking.html) and [optimistic concurrency control](https://qbox.io/blog/optimistic-concurrency-control-in-elasticsearch).
+
 ## Indexed data
 
 Blocks
@@ -49,6 +55,7 @@ Usage:
 
 Flags:
   -A, --aergo string       host and port of aergo server. Alternative to setting host and port separately.
+      --conflict int32     time to idle when a conflict occurs (in seconds). Use this for optimistic concurrency. Elasticsearch only
   -T, --dbtype string      Type of database used (elastic, mariadb) (default "elastic")
   -E, --dburl string       Database URL (default "http://localhost:9200")
       --exit-on-complete   exit when reindexing sync completes for the first time

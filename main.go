@@ -32,6 +32,7 @@ var (
 	aergoAddress    string
 	startFrom       int32
 	stopAt          int32
+	idleOnConflict  int32
 
 	logger *log.Logger
 
@@ -51,6 +52,7 @@ func init() {
 	fs.StringVarP(&indexNamePrefix, "prefix", "X", "chain_", "prefix used for index names")
 	fs.Int32VarP(&startFrom, "from", "", 0, "start syncing from this block number")
 	fs.Int32VarP(&stopAt, "to", "", -1, "stop syncing at this block number")
+	fs.Int32VarP(&idleOnConflict, "conflict", "", 0, "time to idle when a conflict occurs (in seconds). Use this for optimistic concurrency. Elasticsearch only")
 }
 
 func main() {
@@ -61,7 +63,8 @@ func main() {
 
 func rootRun(cmd *cobra.Command, args []string) {
 	logger = log.NewLogger("indexer")
-	logger.Info().Msg("Starting")
+
+	logger.Info().Msg("Starting indexer...")
 
 	indexer, err := indx.NewIndexer(logger, dbType, dbURL, indexNamePrefix)
 	if err != nil {
@@ -70,7 +73,7 @@ func rootRun(cmd *cobra.Command, args []string) {
 	}
 	client = waitForClient(getServerAddress())
 
-	err = indexer.Start(client, reindexingMode, exitOnComplete, int64(startFrom), int64(stopAt))
+	err = indexer.Start(client, reindexingMode, exitOnComplete, int64(startFrom), int64(stopAt), idleOnConflict)
 	if err != nil {
 		logger.Warn().Err(err).Str("dbURL", dbURL).Msg("Could not start indexer")
 		return
