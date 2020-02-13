@@ -33,9 +33,6 @@ var (
 	startFrom       int32
 	stopAt          int32
 	idleOnConflict  int32
-	etcdEndpoints   []string
-	etcdPort        int32
-	etcdName        string
 
 	logger *log.Logger
 
