@@ -72,6 +72,7 @@ func NewIndexer(logger *log.Logger, dbType string, dbURL string, namePrefix stri
 	if dbType == "elastic" {
 		elasticClient := dbController.(*db.ElasticsearchDbController).Client
 		svc.esLock = distributedLock.NewLock(elasticClient, aliasNamePrefix)
+		svc.log.Info().Str("client", svc.esLock.Owner).Msg("Initialized lock")
 	}
 	return svc, nil
 }
@@ -181,16 +182,7 @@ func (ns *Indexer) Start(grpcClient types.AergoRPCServiceClient, reindex bool, e
 	}
 
 	// Initially, wait for a lock
-	err := ns.AcquireLock()
-	retry := 0
-	for err != nil {
-		if retry%4 == 0 {
-			ns.log.Info().Err(err).Msg("Waiting for lock...")
-		}
-		retry++
-		time.Sleep(15 * time.Second)
-		err = ns.AcquireLock()
-	}
+	ns.WaitForLock()
 
 	// Get ready to start
 	ns.UpdateLastBlockHeightFromDb()
@@ -200,7 +192,30 @@ func (ns *Indexer) Start(grpcClient types.AergoRPCServiceClient, reindex bool, e
 		go ns.CheckConsistency()
 	}
 
-	return ns.StartStream()
+	err := ns.StartStream()
+	if err != nil {
+		ns.log.Error().Err(err).Msg("Failed to start stream")
+		ns.RestartStream()
+	}
+	return nil
+}
+
+// WaitForLock repeatedly tries to acquire lock, indefinitely
+func (ns *Indexer) WaitForLock() error {
+	if ns.esLock == nil {
+		return nil
+	}
+	err := ns.AcquireLock()
+	retry := 0
+	for err != nil {
+		if retry%6 == 0 {
+			ns.log.Info().Err(err).Msg("Waiting for lock...")
+		}
+		retry++
+		time.Sleep(10 * time.Second)
+		err = ns.AcquireLock()
+	}
+	return err
 }
 
 // AcquireLock uses distributed lock (if available) to acquire a lock
@@ -219,8 +234,8 @@ func (ns *Indexer) AcquireLock() error {
 
 // StartStream starts the block stream and calls SyncBlock
 func (ns *Indexer) StartStream() error {
-	if err := ns.AcquireLock(); err != nil {
-		ns.log.Warn().Err(err).Msg("Could not acquire lock")
+	if ns.esLock != nil && !ns.esLock.IsAcquired() {
+		ns.log.Warn().Msg("did not acquire lock before starting")
 		// Don't error, instead try to restart the stream
 		ns.RestartStream()
 		return nil
@@ -257,14 +272,24 @@ func (ns *Indexer) StartStream() error {
 }
 
 // RestartStream restarts the streem after a few seconds and keeps trying to start
+// This happens when the stream stopped during operation
 func (ns *Indexer) RestartStream() {
 	if ns.stream != nil {
 		ns.stream.CloseSend()
 		ns.stream = nil
 	}
-	ns.log.Info().Msg("Restarting stream in 5 seconds")
+	if ns.esLock != nil {
+		// Release lock to give other instances a chance to take over
+		if err := ns.esLock.MustRelease(); err != nil {
+			ns.log.Warn().Err(err).Msg("Failed to release lock")
+		} else {
+			ns.log.Info().Msg("Released lock")
+		}
+	}
+	ns.log.Info().Msg("Restarting stream in 6 seconds")
 	ns.State = "restarting"
-	time.Sleep(5 * time.Second)
+	time.Sleep(6 * time.Second)
+	ns.WaitForLock()
 	err := ns.StartStream()
 	if err != nil {
 		ns.log.Error().Err(err).Msg("Failed to restart stream")
@@ -275,7 +300,11 @@ func (ns *Indexer) RestartStream() {
 // Stop stops the indexer
 func (ns *Indexer) Stop() {
 	if ns.esLock != nil {
-		ns.esLock.Release()
+		if err := ns.esLock.MustRelease(); err != nil {
+			ns.log.Warn().Err(err).Msg("Failed to release lock")
+		} else {
+			ns.log.Info().Msg("Released lock")
+		}
 	}
 	if ns.stream != nil {
 		ns.stream.CloseSend()
@@ -373,6 +402,7 @@ func (ns *Indexer) IdleFor(idleSeconds int32) {
 	dur := time.Duration(int64(time.Second) * int64(idleSeconds))
 	time.AfterFunc(dur, func() {
 		ns.log.Info().Msg("Done with idling")
+		ns.WaitForLock()
 		ns.StartStream()
 	})
 }

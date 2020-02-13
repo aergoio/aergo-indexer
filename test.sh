@@ -18,15 +18,16 @@ docker run -d -p 7845:7845 --name aergo_test aergo/node:2.0 aergosvr --config /a
 echo "Starting indexer"
 sleep 3
 
-#AERGO_URL="localhost:7845"
-AERGO_URL="mainnet-api.aergo.io:7845"
+AERGO_URL="localhost:7845"
+#AERGO_URL="mainnet-api.aergo.io:7845"
 ES_URL="http://localhost:9200"
 MARIADB_URL="root:my-secret-pw@tcp(localhost:3306)/test"
 CHAIN_PREFIX="chain_"
 #SYNC_FROM=19915001
-SYNC_FROM=21257091
+#SYNC_FROM=21257091
 #SYNC_TO=19916000
 SYNC_TO=30000000
+SYNC_FROM=0
 
 #time ./bin/indexer -A $AERGO_URL --dbtype mariadb --dburl $MARIADB_URL --prefix $CHAIN_PREFIX --from $SYNC_FROM --to $SYNC_TO --exit-on-complete --reindex
 
