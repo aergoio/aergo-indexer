@@ -1,6 +1,8 @@
 package db
 
 import (
+	"fmt"
+
 	doc "github.com/aergoio/aergo-indexer/indexer/documents"
 	"github.com/aergoio/aergo-lib/log"
 )
@@ -49,6 +51,7 @@ type DbController interface {
 	GetExistingIndexPrefix(aliasName string, documentType string) (bool, string, error)
 	CreateIndex(indexName string, documentType string) error
 	UpdateAlias(aliasName string, indexName string) error
+	IsConflict(err interface{}) bool
 }
 
 type CreateDocFunction = func() doc.DocType
@@ -59,4 +62,12 @@ type ScrollInstance interface {
 		current    int
 	*/
 	Next() (doc.DocType, error)
+}
+
+type IndexConflictError struct {
+	WrappedError error
+}
+
+func (i *IndexConflictError) Error() string {
+	return fmt.Sprintf("conflict: %s", i.WrappedError.Error())
 }

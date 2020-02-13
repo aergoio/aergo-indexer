@@ -68,11 +68,16 @@ func getFirstError(res *elastic.BulkResponse) error {
 	return nil
 }
 
+// IsConflict returns if error is due to a conflict
+func (esdb *ElasticsearchDbController) IsConflict(err interface{}) bool {
+	return elastic.IsConflict(err)
+}
+
 // Insert inserts a single document using the updata params
 // It returns the number of inserted documents (1) or an error
 func (esdb *ElasticsearchDbController) Insert(document doc.DocType, params UpdateParams) (uint64, error) {
 	ctx := context.Background()
-	_, err := esdb.Client.Index().Index(params.IndexName).Type(params.TypeName).Id(document.GetID()).BodyJson(document).Do(ctx)
+	_, err := esdb.Client.Index().Index(params.IndexName).Type(params.TypeName).OpType("create").Id(document.GetID()).BodyJson(document).Do(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -103,9 +108,9 @@ func (esdb *ElasticsearchDbController) InsertBulk(documentChannel chan doc.DocTy
 	for d := range documentChannel {
 		atomic.AddUint64(&total, 1)
 		if params.Upsert {
-			bulk.Add(elastic.NewBulkIndexRequest().Id(d.GetID()).Doc(d))
-		} else {
 			bulk.Add(elastic.NewBulkUpdateRequest().Id(d.GetID()).Doc(d).DocAsUpsert(true))
+		} else {
+			bulk.Add(elastic.NewBulkIndexRequest().OpType("create").Id(d.GetID()).Doc(d))
 		}
 		if bulk.NumberOfActions() >= params.Size {
 			err := commitBulk()

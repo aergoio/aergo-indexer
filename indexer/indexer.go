@@ -14,6 +14,8 @@ import (
 	"github.com/aergoio/aergo-indexer/types"
 	"github.com/aergoio/aergo-lib/log"
 	"github.com/mr-tron/base58/base58"
+
+	distributedLock "github.com/graup/es-distributed-lock"
 )
 
 // Indexer hold all state information
@@ -32,6 +34,8 @@ type Indexer struct {
 	stream          types.AergoRPCService_ListBlockStreamClient
 	startFrom       int64
 	stopAt          int64
+	idleOnConflict  int32
+	esLock          *distributedLock.Lock
 }
 
 // NewIndexer creates new Indexer instance
@@ -64,6 +68,10 @@ func NewIndexer(logger *log.Logger, dbType string, dbURL string, namePrefix stri
 		exitOnComplete:  false,
 		startFrom:       0,
 		stopAt:          -1,
+	}
+	if dbType == "elastic" {
+		elasticClient := dbController.(*db.ElasticsearchDbController).Client
+		svc.esLock = distributedLock.NewLock(elasticClient, aliasNamePrefix)
 	}
 	return svc, nil
 }
@@ -139,7 +147,7 @@ func (ns *Indexer) OnSyncComplete() {
 }
 
 // Start setups the indexer
-func (ns *Indexer) Start(grpcClient types.AergoRPCServiceClient, reindex bool, exitOnComplete bool, startFrom int64, stopAt int64) error {
+func (ns *Indexer) Start(grpcClient types.AergoRPCServiceClient, reindex bool, exitOnComplete bool, startFrom int64, stopAt int64, idleOnConflict int32) error {
 	ns.grpcClient = grpcClient
 
 	if reindex {
@@ -151,8 +159,6 @@ func (ns *Indexer) Start(grpcClient types.AergoRPCServiceClient, reindex bool, e
 	ns.CreateIndexIfNotExists("tx")
 	ns.CreateIndexIfNotExists("block")
 	ns.CreateIndexIfNotExists("name")
-	ns.UpdateLastBlockHeightFromDb()
-	ns.log.Info().Uint64("last block height", ns.lastBlockHeight).Msg("Started Indexer")
 
 	ns.startFrom = startFrom
 	ns.stopAt = stopAt
@@ -160,9 +166,7 @@ func (ns *Indexer) Start(grpcClient types.AergoRPCServiceClient, reindex bool, e
 		ns.log.Info().Int64("startFrom", startFrom).Int64("stopAt", stopAt).Msg("Only index block number range")
 	}
 
-	if !ns.reindexing {
-		go ns.CheckConsistency()
-	}
+	ns.idleOnConflict = idleOnConflict
 
 	if ns.reindexing {
 		// Don't wait for sync to start when blockchain is booting from genesis
@@ -176,11 +180,53 @@ func (ns *Indexer) Start(grpcClient types.AergoRPCServiceClient, reindex bool, e
 		}
 	}
 
+	// Initially, wait for a lock
+	err := ns.AcquireLock()
+	retry := 0
+	for err != nil {
+		if retry%4 == 0 {
+			ns.log.Info().Err(err).Msg("Waiting for lock...")
+		}
+		retry++
+		time.Sleep(15 * time.Second)
+		err = ns.AcquireLock()
+	}
+
+	// Get ready to start
+	ns.UpdateLastBlockHeightFromDb()
+	ns.log.Info().Uint64("last block height", ns.lastBlockHeight).Msg("Started Indexer")
+
+	if !ns.reindexing {
+		go ns.CheckConsistency()
+	}
+
 	return ns.StartStream()
+}
+
+// AcquireLock uses distributed lock (if available) to acquire a lock
+func (ns *Indexer) AcquireLock() error {
+	if ns.esLock != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(5)*time.Second)
+		defer cancel()
+		if err := ns.esLock.Acquire(ctx, 20*time.Second); err != nil {
+			return err
+		}
+		ns.log.Info().Msg("Acquired lock")
+		ns.esLock.KeepAlive(context.Background(), 2*time.Second)
+	}
+	return nil
 }
 
 // StartStream starts the block stream and calls SyncBlock
 func (ns *Indexer) StartStream() error {
+	if err := ns.AcquireLock(); err != nil {
+		ns.log.Warn().Err(err).Msg("Could not acquire lock")
+		// Don't error, instead try to restart the stream
+		ns.RestartStream()
+		return nil
+	}
+
+	// Connect to GRPC stream
 	var err error
 	ns.stream, err = ns.grpcClient.ListBlockStream(context.Background(), &types.Empty{})
 	if err != nil {
@@ -189,7 +235,8 @@ func (ns *Indexer) StartStream() error {
 	ns.State = "running"
 	go func() {
 		for {
-			if ns.State == "stopped" {
+			if ns.State == "stopped" || ns.State == "idle" {
+				ns.log.Info().Msg("Stream was stopped")
 				return
 			}
 			block, err := ns.stream.Recv()
@@ -203,7 +250,7 @@ func (ns *Indexer) StartStream() error {
 				ns.RestartStream()
 				return
 			}
-			ns.SyncBlock(block)
+			go ns.SyncBlock(block)
 		}
 	}()
 	return nil
@@ -227,6 +274,9 @@ func (ns *Indexer) RestartStream() {
 
 // Stop stops the indexer
 func (ns *Indexer) Stop() {
+	if ns.esLock != nil {
+		ns.esLock.Release()
+	}
 	if ns.stream != nil {
 		ns.stream.CloseSend()
 		ns.stream = nil
@@ -263,13 +313,12 @@ func (ns *Indexer) SyncBlock(block *types.Block) {
 	}
 	if ns.stopAt != -1 && newHeight > uint64(ns.stopAt) {
 		ns.log.Info().Uint64("blockNumber", newHeight).Int64("stopAt", ns.stopAt).Msg("Reached end of specified sync range")
-		//ns.OnSyncComplete()
 		ns.Stop()
 		return
 	}
 
 	// Index new block
-	go ns.IndexBlock(block)
+	ns.IndexBlock(block)
 }
 
 // GetBestBlockFromDb retrieves the current best block from the db
@@ -313,12 +362,37 @@ func (ns *Indexer) GetNodeBlockHeight() (uint64, error) {
 	return blockchain.BestHeight, nil
 }
 
+// IdleFor sets the indexer into idle mode and restarts after {idleSeconds}
+func (ns *Indexer) IdleFor(idleSeconds int32) {
+	if ns.State == "idle" {
+		return
+	}
+	ns.log.Info().Int32("second", idleSeconds).Msg("Going into idle mode")
+	ns.Stop()
+	ns.State = "idle"
+	dur := time.Duration(int64(time.Second) * int64(idleSeconds))
+	time.AfterFunc(dur, func() {
+		ns.log.Info().Msg("Done with idling")
+		ns.StartStream()
+	})
+}
+
 // IndexBlock indexes one block
 func (ns *Indexer) IndexBlock(block *types.Block) {
+	if ns.State == "idle" {
+		return
+	}
 	ctx := context.Background()
 	blockDocument := ns.ConvBlock(block)
 	_, err := ns.db.Insert(blockDocument, db.UpdateParams{IndexName: ns.indexNamePrefix + "block", TypeName: "block"})
 	if err != nil {
+		if ns.db.IsConflict(err) {
+			ns.log.Warn().Err(err).Msg("Detected conflict")
+			if ns.idleOnConflict > 0 {
+				ns.IdleFor(ns.idleOnConflict)
+			}
+			return
+		}
 		ns.log.Warn().Err(err).Msg("Failed to index block")
 		return
 	}

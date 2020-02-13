@@ -6,6 +6,9 @@ protoc:
 bin/indexer: *.go indexer/*.go indexer/**/*.go types/*.go
 	go build -o bin/indexer main.go
 
+clean:
+	go clean
+
 run:
 	go run main.go
 

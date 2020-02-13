@@ -72,6 +72,11 @@ func booleanSortOrderToSql(orderAsc bool) string {
 	return sortOrder
 }
 
+// IsConflict returns if error is due to a conflict
+func (mdb *MariaDbController) IsConflict(err interface{}) bool {
+	return false // TODO: Not implemented
+}
+
 // Insert inserts a single document using the updata params
 // It returns the number of inserted documents (1) or an error
 func (mdb MariaDbController) Insert(document doc.DocType, params UpdateParams) (uint64, error) {
