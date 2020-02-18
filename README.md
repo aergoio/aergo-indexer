@@ -5,7 +5,7 @@ This is a go program that connects to aergo server over RPC and synchronizes blo
 This creates the indices `block`, `tx`, and `name` (with a prefix). These are actually aliases that point to the latest version of the data.
 Check [indexer/documents/documents.go](./indexer/documents/documents.go) for the exact mappings for all supported databases.
 
-When using Elasticsrarch, multiple indexing instances can be run concurrently using these two mechanisms (can be used together):
+When using Elasticsearch, multiple indexing instances can be run concurrently using these two mechanisms (can be used together):
 - The indexer creates a [time-based lock](https://github.com/graup/es-distributed-lock) in ES, excluding other instances writing to the same data set (enabled by default, depending on --prefix).
 - When a data conflict occurs upon indexing, the indexer can set itself into an idle mode, assuming that another instance is running (enabled by e.g. `--conflict 30`).
 
