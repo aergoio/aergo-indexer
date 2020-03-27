@@ -107,7 +107,13 @@ func waitForClient(serverAddr string) types.AergoRPCServiceClient {
 	var err error
 	for {
 		ctx := context.Background()
-		conn, err = grpc.DialContext(ctx, serverAddr, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(5*time.Second))
+		maxMsgSize := 1024 * 1024 * 10 // 10mb
+		conn, err = grpc.DialContext(ctx, serverAddr,
+			grpc.WithInsecure(),
+			grpc.WithBlock(),
+			grpc.WithTimeout(5*time.Second),
+			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMsgSize), grpc.MaxCallSendMsgSize(maxMsgSize)),
+		)
 		if err == nil && conn != nil {
 			break
 		}

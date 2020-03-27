@@ -12,7 +12,7 @@ echo "Starting mariadb"
 
 echo "Starting aergosvr"
 #docker run -d -p 7845:7845 --name aergo_test aergo/node:1.3 aergosvr --config /aergo/testmode.toml
-docker run -d -p 7845:7845 --name aergo_test aergo/node:2.0 aergosvr --config /aergo/testmode.toml
+docker run -d -p 7845:7845 --name aergo_test aergo/node:2.2 aergosvr --config /aergo/testmode.toml
 
 #docker run -d -p 7845:7845 --name aergo_test aergo/node
 echo "Starting indexer"
