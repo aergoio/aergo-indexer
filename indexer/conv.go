@@ -31,12 +31,14 @@ func (ns *Indexer) ConvBlock(block *types.Block) doc.EsBlock {
 	}
 }
 
+// Internal names refer to special accounts that don't need to be resolved
 func isInternalName(name string) bool {
 	switch name {
 	case
 		"aergo.name",
 		"aergo.system",
-		"aergo.enterprise":
+		"aergo.enterprise",
+		"aergo.vault":
 		return true
 	}
 	return false
