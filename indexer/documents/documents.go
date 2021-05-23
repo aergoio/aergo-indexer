@@ -62,6 +62,30 @@ type EsName struct {
 	UpdateTx    string `json:"tx" db:"tx"`
 }
 
+// EsTokenTransfer is a transfer of a token
+type EsTokenTransfer struct {
+	*BaseEsType
+	TxId         string    `json:"tx_id" db:"tx_id"`
+	Timestamp    time.Time `json:"ts" db:"ts"`
+	TokenAddress string    `json:"address" db:"address"`
+	From         string    `json:"from" db:"from"`
+	To           string    `json:"to" db:"to"`
+	Amount       string    `json:"amount" db:"amount"`             // string of BigInt
+	AmountFloat  float32   `json:"amount_float" db:"amount_float"` // float for sorting
+	TokenId      string    `json:"token_id" db:"token_id"`
+}
+
+// EsToken is meta data of a token. The id is the contract address.
+type EsToken struct {
+	*BaseEsType
+	TxId     string             `json:"tx_id" db:"tx_id"`
+	Type     category.TokenType `json:"type" db:"type"`
+	Name     string             `json:"name" db:"name"`
+	Symbol   string             `json:"symbol" db:"symbol"`
+	Decimals uint8              `json:"decimals" db:"decimals"`
+	Supply   string             `json:"supply" db:"supply"`
+}
+
 // EsMappings contains the elasticsearch mappings
 var EsMappings = map[string]string{
 	"tx": `{
@@ -142,6 +166,61 @@ var EsMappings = map[string]string{
 			}
 		}
 	}`,
+	"token_transfer": `{
+		"mappings":{
+			"token_transfer":{
+				"properties":{
+					"tx_id": {
+						"type": "keyword"
+					},
+					"ts": {
+						"type": "date"
+					},
+					"address": {
+						"type": "keyword"
+					},
+					"token_id": {
+						"type": "keyword"
+					},
+					"from": {
+						"type": "keyword"
+					},
+					"to": {
+						"type": "keyword"
+					},
+					"amount": {
+						"enabled": false
+					},
+					"amount_float": {
+						"type": "float"
+					}
+				}
+			}
+		}
+	}`,
+	"token": `{
+		"mappings":{
+			"token":{
+				"properties":{
+					"tx_id": {
+						"type": "keyword"
+					},
+					"name": {
+						"type": "keyword"
+					},
+					"symbol": {
+						"type": "keyword"
+					},
+					"decimals": {
+						"type": "short"
+					},
+					"supply": {
+						"enabled": false
+					}
+				}
+			}
+		}
+	}`,
 }
 
 func mapCategoriesToStr(categories []category.TxCategory) []string {
@@ -198,3 +277,5 @@ var SQLSchemas = map[string]string{
 			INDEX name_address (address)
 		);`,
 }
+
+// TODO: add token_transfer and token to SQL

@@ -160,6 +160,8 @@ func (ns *Indexer) Start(grpcClient types.AergoRPCServiceClient, reindex bool, e
 	ns.CreateIndexIfNotExists("tx")
 	ns.CreateIndexIfNotExists("block")
 	ns.CreateIndexIfNotExists("name")
+	ns.CreateIndexIfNotExists("token")
+	ns.CreateIndexIfNotExists("token_transfer")
 
 	ns.startFrom = startFrom
 	ns.stopAt = stopAt
@@ -460,6 +462,8 @@ func (ns *Indexer) IndexBlocksInRange(fromBlockHeight uint64, toBlockHeight uint
 	done := make(chan struct{})
 	txChannel := make(chan doc.DocType, 20000)
 	nameChannel := make(chan doc.DocType, 5000)
+	tokenChannel := make(chan doc.DocType, 5000)
+	tokenTxChannel := make(chan doc.DocType, 5000)
 
 	if fromBlockHeight < uint64(ns.startFrom) {
 		fromBlockHeight = uint64(ns.startFrom)
@@ -492,6 +496,28 @@ func (ns *Indexer) IndexBlocksInRange(fromBlockHeight uint64, toBlockHeight uint
 	}()
 	wg.Add(1)
 
+	waitForTokens := func() error {
+		defer close(tokenChannel)
+		<-done
+		return nil
+	}
+	go func() {
+		defer wg.Done()
+		BulkIndexer(ctx, ns.log, ns.db, tokenChannel, waitForTokens, ns.indexNamePrefix+"token", "token", 2500, true)
+	}()
+	wg.Add(1)
+
+	waitForTokenTx := func() error {
+		defer close(tokenTxChannel)
+		<-done
+		return nil
+	}
+	go func() {
+		defer wg.Done()
+		BulkIndexer(ctx, ns.log, ns.db, tokenTxChannel, waitForTokenTx, ns.indexNamePrefix+"token_transfer", "token_transfer", 2500, true)
+	}()
+	wg.Add(1)
+
 	generator := func() error {
 		defer close(channel)
 		defer close(done)
@@ -505,7 +531,7 @@ func (ns *Indexer) IndexBlocksInRange(fromBlockHeight uint64, toBlockHeight uint
 				continue
 			}
 			if len(block.Body.Txs) > 0 {
-				ns.IndexTxs(block, block.Body.Txs, txChannel, nameChannel)
+				ns.IndexTxs(block, block.Body.Txs, txChannel, nameChannel, tokenChannel, tokenTxChannel)
 			}
 			d := ns.ConvBlock(block)
 			select {
@@ -525,7 +551,14 @@ func (ns *Indexer) IndexBlocksInRange(fromBlockHeight uint64, toBlockHeight uint
 }
 
 // IndexTxs indexes a list of transactions in bulk
-func (ns *Indexer) IndexTxs(block *types.Block, txs []*types.Tx, channel chan doc.DocType, nameChannel chan doc.DocType) {
+func (ns *Indexer) IndexTxs(
+	block *types.Block,
+	txs []*types.Tx,
+	channel chan doc.DocType,
+	nameChannel chan doc.DocType,
+	tokenChannel chan doc.DocType,
+	tokenTxChannel chan doc.DocType,
+) {
 	// This simply pushes all Txs to the channel to be consumed elsewhere
 	blockTs := time.Unix(0, block.Header.Timestamp)
 	for _, tx := range txs {
@@ -541,6 +574,22 @@ func (ns *Indexer) IndexTxs(block *types.Block, txs []*types.Tx, channel chan do
 			nameDoc := ns.ConvNameTx(tx, d.BlockNo)
 			nameDoc.UpdateBlock = d.BlockNo
 			nameChannel <- nameDoc
+		}
+
+		// Process token creation transactions
+		if ns.MaybeTokenCreation(tx) {
+			// This might be a token creation, get the receipt
+			receipt, err := ns.grpcClient.GetReceipt(context.Background(), &types.SingleBytes{Value: tx.GetHash()})
+			if err != nil {
+				ns.log.Warn().Str("tx", d.Id).Err(err).Msg("Failed to get tx receipt")
+				continue
+			}
+			if receipt.Status == "CREATED" {
+				// Receipt looks good, let's get the contract details
+
+				tokenDoc := ns.ConvContractCreateTx(tx, d, receipt)
+				tokenChannel <- tokenDoc
+			}
 		}
 	}
 }

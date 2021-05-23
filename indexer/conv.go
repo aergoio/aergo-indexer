@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"strings"
 	"time"
 
 	"github.com/aergoio/aergo-indexer/indexer/category"
@@ -123,4 +124,36 @@ func (ns *Indexer) ConvNameTx(tx *types.Tx, blockNo uint64) doc.EsName {
 		Address:    address,
 		UpdateTx:   hash,
 	}
+}
+
+// ConvContractCreateTx creates document for token creation
+func (ns *Indexer) ConvContractCreateTx(tx *types.Tx, txDoc doc.EsTx, receipt *types.Receipt) doc.EsToken {
+	address := base58.Encode(receipt.ContractAddress)
+	return doc.EsToken{
+		BaseEsType: &doc.BaseEsType{address},
+		TxId:       txDoc.GetID(),
+		Type:       category.ARC1, // TODO
+		Name:       "name",        // TODO
+		Symbol:     "symbol",      // TODO
+		Decimals:   18,            // TODO
+		Supply:     "10101010",    // TODO
+	}
+}
+
+// MaybeTokenCreation runs a heuristic to determine if tx might be creating a token
+func (ns *Indexer) MaybeTokenCreation(tx *types.Tx) bool {
+	txBody := tx.GetBody()
+	isDeploy := len(txBody.GetRecipient()) == 0 && len(txBody.Payload) > 0
+	if !isDeploy {
+		return false
+	}
+	// We treat the payload (which is part bytecode, part ABI) as text
+	payload := string(txBody.GetPayload())
+	keywords := [...]string{"balanceOf", "transfer", "symbol"}
+	for _, keyword := range keywords {
+		if !strings.Contains(payload, keyword) {
+			return false
+		}
+	}
+	return true
 }

@@ -28,7 +28,7 @@ func UnmarshalPayload(tx *types.Tx) (*PayloadBasic, error) {
 	return payload, nil
 }
 
-// UnmarshalPayloadWithArgs concerts payload bytes into a struct using json. support string arguments
+// UnmarshalPayloadWithArgs converts payload bytes into a struct using json. support string arguments
 func UnmarshalPayloadWithArgs(tx *types.Tx) (*Payload, error) {
 	payloadSource := tx.GetBody().GetPayload()
 	payload := new(Payload)

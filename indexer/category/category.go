@@ -37,10 +37,9 @@ func DetectTxCategory(tx *types.Tx) TxCategory {
 	txBody := tx.GetBody()
 	txType := txBody.GetType()
 	txRecipient := string(txBody.GetRecipient())
-	/* Not merged yet
 	if txType == types.TxType_REDEPLOY {
 		return Redeploy
-	} */
+	}
 	if txRecipient == "" && len(txBody.Payload) > 0 {
 		return Deploy
 	}
