@@ -433,6 +433,8 @@ func (ns *Indexer) IndexBlock(block *types.Block) {
 	if len(block.Body.Txs) > 0 {
 		txChannel := make(chan doc.DocType)
 		nameChannel := make(chan doc.DocType)
+		tokenChannel := make(chan doc.DocType)
+		tokenTxChannel := make(chan doc.DocType)
 		done := make(chan struct{})
 
 		waitForNames := func() error {
@@ -442,10 +444,24 @@ func (ns *Indexer) IndexBlock(block *types.Block) {
 		}
 		go BulkIndexer(ctx, ns.log, ns.db, nameChannel, waitForNames, ns.indexNamePrefix+"name", "name", 2500, true)
 
+		waitForTokens := func() error {
+			defer close(tokenChannel)
+			<-done
+			return nil
+		}
+		go BulkIndexer(ctx, ns.log, ns.db, tokenChannel, waitForTokens, ns.indexNamePrefix+"token", "token", 2500, true)
+
+		waitForTokenTx := func() error {
+			defer close(tokenTxChannel)
+			<-done
+			return nil
+		}
+		go BulkIndexer(ctx, ns.log, ns.db, tokenTxChannel, waitForTokenTx, ns.indexNamePrefix+"token_transfer", "token_transfer", 2500, true)
+
 		generator := func() error {
 			defer close(txChannel)
 			defer close(done)
-			ns.IndexTxs(block, block.Body.Txs, txChannel, nameChannel)
+			ns.IndexTxs(block, block.Body.Txs, txChannel, nameChannel, tokenChannel, tokenTxChannel)
 			return nil
 		}
 		BulkIndexer(ctx, ns.log, ns.db, txChannel, generator, ns.indexNamePrefix+"tx", "tx", 2000, false)
