@@ -3,12 +3,15 @@ package indexer
 import (
 	"context"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"strconv"
 	"sync"
 	"time"
 
+	"github.com/aergoio/aergo-indexer/indexer/category"
 	"github.com/aergoio/aergo-indexer/indexer/db"
 	doc "github.com/aergoio/aergo-indexer/indexer/documents"
 	"github.com/aergoio/aergo-indexer/types"
@@ -140,6 +143,8 @@ func (ns *Indexer) OnSyncComplete() {
 		ns.UpdateAliasForType("tx")
 		ns.UpdateAliasForType("block")
 		ns.UpdateAliasForType("name")
+		ns.UpdateAliasForType("token")
+		ns.UpdateAliasForType("token_transfer")
 	}
 	ns.log.Info().Msg("Initial sync complete")
 	if ns.exitOnComplete {
@@ -592,6 +597,28 @@ func (ns *Indexer) IndexTxs(
 			nameChannel <- nameDoc
 		}
 
+		// Process token transfer events
+		if tx.GetBody().GetType() == types.TxType_CALL {
+			events, err := ns.grpcClient.ListEvents(context.Background(), &types.FilterInfo{
+				ContractAddress: tx.GetBody().GetRecipient(),
+				EventName:       "transfer",
+				Blockfrom:       d.BlockNo,
+				Blockto:         d.BlockNo,
+			})
+			if err == nil {
+				for idx, event := range events.Events {
+					var args []interface{}
+					json.Unmarshal([]byte(event.JsonArgs), &args)
+					if len(args) < 3 {
+						continue
+					}
+					tokenTx := ns.ConvTokenTx(tx, d, idx, args)
+					tokenTxChannel <- tokenTx
+					ns.log.Warn().Str("id", tokenTx.Id).Str("amount", tokenTx.Amount).Msg("New token transfer")
+				}
+			}
+		}
+
 		// Process token creation transactions
 		if ns.MaybeTokenCreation(tx) {
 			// This might be a token creation, get the receipt
@@ -602,12 +629,70 @@ func (ns *Indexer) IndexTxs(
 			}
 			if receipt.Status == "CREATED" {
 				// Receipt looks good, let's get the contract details
+				token := ns.ConvTokenCreateTx(tx, d, receipt)
+				token.Type = category.ARC2
 
-				tokenDoc := ns.ConvContractCreateTx(tx, d, receipt)
-				tokenChannel <- tokenDoc
+				name, err := ns.queryContract(receipt.ContractAddress, "name")
+				if err != nil {
+					ns.log.Warn().Err(err).Msg("Failed to get name")
+				}
+				token.Name = name
+				symbol, err := ns.queryContract(receipt.ContractAddress, "symbol")
+				if err != nil {
+					ns.log.Warn().Err(err).Msg("Failed to get symbol")
+				}
+				token.Symbol = symbol
+				supply, err := ns.queryContract(receipt.ContractAddress, "totalSupply")
+				if err == nil {
+					token.Supply = supply
+					token.Type = category.ARC1
+				}
+				decimals, err := ns.queryContract(receipt.ContractAddress, "decimals")
+				if err == nil {
+					if d, err := strconv.Atoi(decimals); err == nil {
+						token.Decimals = uint8(d)
+					}
+				}
+
+				tokenChannel <- token
+				ns.log.Warn().Str("id", token.Id).Msg("New token")
 			}
 		}
 	}
+}
+
+func (ns *Indexer) queryContract(address []byte, name string) (string, error) {
+	queryinfo := map[string]interface{}{"Name": name}
+	queryinfoJson, err := json.Marshal(queryinfo)
+	if err != nil {
+		return "", err
+	}
+	result, err := ns.grpcClient.QueryContract(context.Background(), &types.Query{
+		ContractAddress: address,
+		Queryinfo:       queryinfoJson,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	var ret interface{}
+	err = json.Unmarshal([]byte(result.Value), &ret)
+	if err != nil {
+		return "", err
+	}
+
+	switch c := ret.(type) {
+	case string:
+		return c, nil
+	case map[string]interface{}:
+		am, ok := convertBignumJson(c)
+		if ok {
+			return am.String(), nil
+		}
+	case int:
+		return fmt.Sprint(c), nil
+	}
+	return string(result.Value), nil
 }
 
 func (ns *Indexer) deleteTypeByQuery(typeName string, rangeQuery db.IntegerRangeQuery) {
@@ -628,4 +713,6 @@ func (ns *Indexer) DeleteBlocksInRange(fromBlockHeight uint64, toBlockHeight uin
 	ns.deleteTypeByQuery("block", db.IntegerRangeQuery{Field: "no", Min: fromBlockHeight, Max: toBlockHeight})
 	ns.deleteTypeByQuery("tx", db.IntegerRangeQuery{Field: "blockno", Min: fromBlockHeight, Max: toBlockHeight})
 	ns.deleteTypeByQuery("name", db.IntegerRangeQuery{Field: "blockno", Min: fromBlockHeight, Max: toBlockHeight})
+	ns.deleteTypeByQuery("token_transfer", db.IntegerRangeQuery{Field: "blockno", Min: fromBlockHeight, Max: toBlockHeight})
+	ns.deleteTypeByQuery("token", db.IntegerRangeQuery{Field: "blockno", Min: fromBlockHeight, Max: toBlockHeight})
 }

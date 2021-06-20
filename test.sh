@@ -27,12 +27,12 @@ CHAIN_PREFIX="chain_"
 #SYNC_FROM=19915001
 #SYNC_FROM=21257091
 #SYNC_TO=19916000
-SYNC_FROM=62400000
-SYNC_TO=64760000
+SYNC_FROM=62658510
+SYNC_TO=62666000
 
 #time ./bin/indexer -A $AERGO_URL --dbtype mariadb --dburl $MARIADB_URL --prefix $CHAIN_PREFIX --from $SYNC_FROM --to $SYNC_TO --exit-on-complete --reindex
 
-./bin/indexer -A $AERGO_URL --dbtype elastic --dburl $ES_URL --prefix $CHAIN_PREFIX --from $SYNC_FROM --to $SYNC_TO
+./bin/indexer -A $AERGO_URL --dbtype elastic --dburl $ES_URL --prefix $CHAIN_PREFIX --from $SYNC_FROM --to $SYNC_TO --reindex
 
 # time ../aergo-esindexer/bin/esindexer -A $AERGO_URL -E $ES_URL --prefix old_$CHAIN_PREFIX --exit-on-complete --reindex 
 
