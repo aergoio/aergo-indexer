@@ -253,7 +253,7 @@ var SQLSchemas = map[string]string{
 			amount VARCHAR(30) NOT NULL,
 			amount_float FLOAT(23) NOT NULL,
 			type CHAR(1) NOT NULL,
-			category ENUM(` + categories + `),
+			category ENUM(` + categories + `) NOT NULL,
 			PRIMARY KEY (id),
 			INDEX tx_from (` + "`" + `from` + "`" + `(10)),
 			INDEX tx_to (` + "`" + `to` + "`" + `(10)),
@@ -307,14 +307,13 @@ var SQLSchemas = map[string]string{
 			id VARCHAR(52) NOT NULL UNIQUE,
 			tx_id CHAR(44) NOT NULL,
 			blockno INTEGER UNSIGNED NOT NULL,
+			type ENUM('ARC1', 'ARC2') NOT NULL,
 			name VARCHAR(12) NOT NULL,
 			symbol VARCHAR(12) NOT NULL,
 			decimals TINYINT NOT NULL,
 			supply VARCHAR(30) NOT NULL,
 			PRIMARY KEY (id),
 			INDEX name_name (name),
-			INDEX name_address (address)
+			INDEX name_address (tx_id)
 		);`,
 }
-
-// TODO: add token_transfer and token to SQL

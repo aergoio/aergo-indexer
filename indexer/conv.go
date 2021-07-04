@@ -139,8 +139,8 @@ func convertBignumJson(in map[string]interface{}) (*big.Int, bool) {
 }
 
 // ConvContractCreateTx creates document for token creation
-func (ns *Indexer) ConvTokenTx(tx *types.Tx, txDoc doc.EsTx, idx int, args []interface{}) doc.EsTokenTransfer {
-	tokenAddress := ns.encodeAndResolveAccount(tx.Body.Recipient, txDoc.BlockNo)
+func (ns *Indexer) ConvTokenTx(contractAddress []byte, txDoc doc.EsTx, idx int, args []interface{}) doc.EsTokenTransfer {
+	tokenAddress := ns.encodeAndResolveAccount(contractAddress, txDoc.BlockNo)
 
 	amount := "0"
 	tokenId := ""
@@ -194,7 +194,7 @@ func (ns *Indexer) MaybeTokenCreation(tx *types.Tx) bool {
 		return false
 	}
 	// We treat the payload (which is part bytecode, part ABI) as text
-	// and look for ARC1/2 keywords
+	// and check that ALL the ARC1/2 keywords are included
 	payload := string(txBody.GetPayload())
 	keywords := [...]string{"balanceOf", "transfer", "symbol"}
 	for _, keyword := range keywords {

@@ -587,9 +587,6 @@ func (ns *Indexer) IndexTxs(
 		d.Timestamp = blockTs
 		d.BlockNo = block.Header.BlockNo
 
-		// Add tx to channel
-		channel <- d
-
 		// Process name transactions
 		if tx.GetBody().GetType() == types.TxType_GOVERNANCE && string(tx.GetBody().GetRecipient()) == "aergo.name" {
 			nameDoc := ns.ConvNameTx(tx, d.BlockNo)
@@ -597,10 +594,54 @@ func (ns *Indexer) IndexTxs(
 			nameChannel <- nameDoc
 		}
 
+		// Process token creation transactions
+		createdToken := false
+		contractAddress := tx.GetBody().GetRecipient()
+		if ns.MaybeTokenCreation(tx) {
+			// Based on heuristic, this might be a token creation. Let's check the receipt
+			receipt, err := ns.grpcClient.GetReceipt(context.Background(), &types.SingleBytes{Value: tx.GetHash()})
+			if err != nil {
+				ns.log.Warn().Str("tx", d.Id).Err(err).Msg("Failed to get tx receipt")
+				continue
+			}
+			if receipt.Status == "CREATED" {
+				createdToken = true
+				contractAddress = receipt.ContractAddress
+
+				// Receipt looks good, let's get the contract details
+				token := ns.ConvTokenCreateTx(tx, d, receipt)
+				token.Type = category.ARC2
+
+				// FIXME: possible data consistency issue.
+				// We query the contract at the current block, not the block that it was created.
+				name, err := ns.queryContract(contractAddress, "name")
+				if err == nil {
+					token.Name = name
+				}
+				symbol, err := ns.queryContract(contractAddress, "symbol")
+				if err == nil {
+					token.Symbol = symbol
+				}
+				supply, err := ns.queryContract(contractAddress, "totalSupply")
+				if err == nil {
+					token.Supply = supply
+					token.Type = category.ARC1
+				}
+				decimals, err := ns.queryContract(contractAddress, "decimals")
+				if err == nil {
+					if d, err := strconv.Atoi(decimals); err == nil {
+						token.Decimals = uint8(d)
+					}
+				}
+
+				tokenChannel <- token
+			}
+		}
+
 		// Process token transfer events
-		if tx.GetBody().GetType() == types.TxType_CALL {
+		if tx.GetBody().GetType() == types.TxType_CALL || createdToken {
 			events, err := ns.grpcClient.ListEvents(context.Background(), &types.FilterInfo{
-				ContractAddress: tx.GetBody().GetRecipient(),
+				ContractAddress: contractAddress,
 				EventName:       "transfer",
 				Blockfrom:       d.BlockNo,
 				Blockto:         d.BlockNo,
@@ -612,52 +653,14 @@ func (ns *Indexer) IndexTxs(
 					if len(args) < 3 {
 						continue
 					}
-					tokenTx := ns.ConvTokenTx(tx, d, idx, args)
+					tokenTx := ns.ConvTokenTx(contractAddress, d, idx, args)
 					tokenTxChannel <- tokenTx
-					ns.log.Warn().Str("id", tokenTx.Id).Str("amount", tokenTx.Amount).Msg("New token transfer")
 				}
 			}
 		}
 
-		// Process token creation transactions
-		if ns.MaybeTokenCreation(tx) {
-			// This might be a token creation, get the receipt
-			receipt, err := ns.grpcClient.GetReceipt(context.Background(), &types.SingleBytes{Value: tx.GetHash()})
-			if err != nil {
-				ns.log.Warn().Str("tx", d.Id).Err(err).Msg("Failed to get tx receipt")
-				continue
-			}
-			if receipt.Status == "CREATED" {
-				// Receipt looks good, let's get the contract details
-				token := ns.ConvTokenCreateTx(tx, d, receipt)
-				token.Type = category.ARC2
-
-				name, err := ns.queryContract(receipt.ContractAddress, "name")
-				if err != nil {
-					ns.log.Warn().Err(err).Msg("Failed to get name")
-				}
-				token.Name = name
-				symbol, err := ns.queryContract(receipt.ContractAddress, "symbol")
-				if err != nil {
-					ns.log.Warn().Err(err).Msg("Failed to get symbol")
-				}
-				token.Symbol = symbol
-				supply, err := ns.queryContract(receipt.ContractAddress, "totalSupply")
-				if err == nil {
-					token.Supply = supply
-					token.Type = category.ARC1
-				}
-				decimals, err := ns.queryContract(receipt.ContractAddress, "decimals")
-				if err == nil {
-					if d, err := strconv.Atoi(decimals); err == nil {
-						token.Decimals = uint8(d)
-					}
-				}
-
-				tokenChannel <- token
-				ns.log.Warn().Str("id", token.Id).Msg("New token")
-			}
-		}
+		// Add tx to channel
+		channel <- d
 	}
 }
 
