@@ -3,12 +3,15 @@ package indexer
 import (
 	"context"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"strconv"
 	"sync"
 	"time"
 
+	"github.com/aergoio/aergo-indexer/indexer/category"
 	"github.com/aergoio/aergo-indexer/indexer/db"
 	doc "github.com/aergoio/aergo-indexer/indexer/documents"
 	"github.com/aergoio/aergo-indexer/types"
@@ -140,6 +143,8 @@ func (ns *Indexer) OnSyncComplete() {
 		ns.UpdateAliasForType("tx")
 		ns.UpdateAliasForType("block")
 		ns.UpdateAliasForType("name")
+		ns.UpdateAliasForType("token")
+		ns.UpdateAliasForType("token_transfer")
 	}
 	ns.log.Info().Msg("Initial sync complete")
 	if ns.exitOnComplete {
@@ -160,6 +165,8 @@ func (ns *Indexer) Start(grpcClient types.AergoRPCServiceClient, reindex bool, e
 	ns.CreateIndexIfNotExists("tx")
 	ns.CreateIndexIfNotExists("block")
 	ns.CreateIndexIfNotExists("name")
+	ns.CreateIndexIfNotExists("token")
+	ns.CreateIndexIfNotExists("token_transfer")
 
 	ns.startFrom = startFrom
 	ns.stopAt = stopAt
@@ -431,6 +438,8 @@ func (ns *Indexer) IndexBlock(block *types.Block) {
 	if len(block.Body.Txs) > 0 {
 		txChannel := make(chan doc.DocType)
 		nameChannel := make(chan doc.DocType)
+		tokenChannel := make(chan doc.DocType)
+		tokenTxChannel := make(chan doc.DocType)
 		done := make(chan struct{})
 
 		waitForNames := func() error {
@@ -440,10 +449,24 @@ func (ns *Indexer) IndexBlock(block *types.Block) {
 		}
 		go BulkIndexer(ctx, ns.log, ns.db, nameChannel, waitForNames, ns.indexNamePrefix+"name", "name", 2500, true)
 
+		waitForTokens := func() error {
+			defer close(tokenChannel)
+			<-done
+			return nil
+		}
+		go BulkIndexer(ctx, ns.log, ns.db, tokenChannel, waitForTokens, ns.indexNamePrefix+"token", "token", 2500, true)
+
+		waitForTokenTx := func() error {
+			defer close(tokenTxChannel)
+			<-done
+			return nil
+		}
+		go BulkIndexer(ctx, ns.log, ns.db, tokenTxChannel, waitForTokenTx, ns.indexNamePrefix+"token_transfer", "token_transfer", 2500, true)
+
 		generator := func() error {
 			defer close(txChannel)
 			defer close(done)
-			ns.IndexTxs(block, block.Body.Txs, txChannel, nameChannel)
+			ns.IndexTxs(block, block.Body.Txs, txChannel, nameChannel, tokenChannel, tokenTxChannel)
 			return nil
 		}
 		BulkIndexer(ctx, ns.log, ns.db, txChannel, generator, ns.indexNamePrefix+"tx", "tx", 2000, false)
@@ -460,6 +483,8 @@ func (ns *Indexer) IndexBlocksInRange(fromBlockHeight uint64, toBlockHeight uint
 	done := make(chan struct{})
 	txChannel := make(chan doc.DocType, 20000)
 	nameChannel := make(chan doc.DocType, 5000)
+	tokenChannel := make(chan doc.DocType, 5000)
+	tokenTxChannel := make(chan doc.DocType, 5000)
 
 	if fromBlockHeight < uint64(ns.startFrom) {
 		fromBlockHeight = uint64(ns.startFrom)
@@ -492,6 +517,28 @@ func (ns *Indexer) IndexBlocksInRange(fromBlockHeight uint64, toBlockHeight uint
 	}()
 	wg.Add(1)
 
+	waitForTokens := func() error {
+		defer close(tokenChannel)
+		<-done
+		return nil
+	}
+	go func() {
+		defer wg.Done()
+		BulkIndexer(ctx, ns.log, ns.db, tokenChannel, waitForTokens, ns.indexNamePrefix+"token", "token", 2500, true)
+	}()
+	wg.Add(1)
+
+	waitForTokenTx := func() error {
+		defer close(tokenTxChannel)
+		<-done
+		return nil
+	}
+	go func() {
+		defer wg.Done()
+		BulkIndexer(ctx, ns.log, ns.db, tokenTxChannel, waitForTokenTx, ns.indexNamePrefix+"token_transfer", "token_transfer", 2500, true)
+	}()
+	wg.Add(1)
+
 	generator := func() error {
 		defer close(channel)
 		defer close(done)
@@ -505,7 +552,7 @@ func (ns *Indexer) IndexBlocksInRange(fromBlockHeight uint64, toBlockHeight uint
 				continue
 			}
 			if len(block.Body.Txs) > 0 {
-				ns.IndexTxs(block, block.Body.Txs, txChannel, nameChannel)
+				ns.IndexTxs(block, block.Body.Txs, txChannel, nameChannel, tokenChannel, tokenTxChannel)
 			}
 			d := ns.ConvBlock(block)
 			select {
@@ -525,7 +572,14 @@ func (ns *Indexer) IndexBlocksInRange(fromBlockHeight uint64, toBlockHeight uint
 }
 
 // IndexTxs indexes a list of transactions in bulk
-func (ns *Indexer) IndexTxs(block *types.Block, txs []*types.Tx, channel chan doc.DocType, nameChannel chan doc.DocType) {
+func (ns *Indexer) IndexTxs(
+	block *types.Block,
+	txs []*types.Tx,
+	channel chan doc.DocType,
+	nameChannel chan doc.DocType,
+	tokenChannel chan doc.DocType,
+	tokenTxChannel chan doc.DocType,
+) {
 	// This simply pushes all Txs to the channel to be consumed elsewhere
 	blockTs := time.Unix(0, block.Header.Timestamp)
 	for _, tx := range txs {
@@ -533,16 +587,115 @@ func (ns *Indexer) IndexTxs(block *types.Block, txs []*types.Tx, channel chan do
 		d.Timestamp = blockTs
 		d.BlockNo = block.Header.BlockNo
 
-		// Add tx to channel
-		channel <- d
-
 		// Process name transactions
 		if tx.GetBody().GetType() == types.TxType_GOVERNANCE && string(tx.GetBody().GetRecipient()) == "aergo.name" {
 			nameDoc := ns.ConvNameTx(tx, d.BlockNo)
 			nameDoc.UpdateBlock = d.BlockNo
 			nameChannel <- nameDoc
 		}
+
+		// Process token creation transactions
+		createdToken := false
+		contractAddress := tx.GetBody().GetRecipient()
+		if ns.MaybeTokenCreation(tx) {
+			// Based on heuristic, this might be a token creation. Let's check the receipt
+			receipt, err := ns.grpcClient.GetReceipt(context.Background(), &types.SingleBytes{Value: tx.GetHash()})
+			if err != nil {
+				ns.log.Warn().Str("tx", d.Id).Err(err).Msg("Failed to get tx receipt")
+				continue
+			}
+			if receipt.Status == "CREATED" {
+				createdToken = true
+				contractAddress = receipt.ContractAddress
+
+				// Receipt looks good, let's get the contract details
+				token := ns.ConvTokenCreateTx(tx, d, receipt)
+				token.Type = category.ARC2
+
+				// FIXME: possible data consistency issue.
+				// We query the contract at the current block, not the block that it was created.
+				name, err := ns.queryContract(contractAddress, "name")
+				if err == nil {
+					token.Name = name
+				}
+				symbol, err := ns.queryContract(contractAddress, "symbol")
+				if err == nil {
+					token.Symbol = symbol
+				}
+				supply, err := ns.queryContract(contractAddress, "totalSupply")
+				if err == nil {
+					token.Supply = supply
+					token.Type = category.ARC1
+				}
+				decimals, err := ns.queryContract(contractAddress, "decimals")
+				if err == nil {
+					if d, err := strconv.Atoi(decimals); err == nil {
+						token.Decimals = uint8(d)
+					}
+				}
+
+				tokenChannel <- token
+			}
+		}
+
+		// Process token transfer events
+		if tx.GetBody().GetType() == types.TxType_CALL || createdToken {
+			events, err := ns.grpcClient.ListEvents(context.Background(), &types.FilterInfo{
+				ContractAddress: contractAddress,
+				EventName:       "transfer",
+				Blockfrom:       d.BlockNo,
+				Blockto:         d.BlockNo,
+			})
+			if err == nil {
+				for idx, event := range events.Events {
+					var args []interface{}
+					json.Unmarshal([]byte(event.JsonArgs), &args)
+					if len(args) < 3 {
+						continue
+					}
+					tokenTx := ns.ConvTokenTx(contractAddress, d, idx, args)
+					tokenTxChannel <- tokenTx
+				}
+			}
+		}
+
+		// Add tx to channel
+		channel <- d
 	}
+}
+
+func (ns *Indexer) queryContract(address []byte, name string) (string, error) {
+	queryinfo := map[string]interface{}{"Name": name}
+	queryinfoJson, err := json.Marshal(queryinfo)
+	if err != nil {
+		return "", err
+	}
+	result, err := ns.grpcClient.QueryContract(context.Background(), &types.Query{
+		ContractAddress: address,
+		Queryinfo:       queryinfoJson,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	var ret interface{}
+	err = json.Unmarshal([]byte(result.Value), &ret)
+	if err != nil {
+		return "", err
+	}
+
+	switch c := ret.(type) {
+	case string:
+		return c, nil
+	case map[string]interface{}:
+		am, ok := convertBignumJson(c)
+		if ok {
+			return am.String(), nil
+		}
+	case int:
+		return fmt.Sprint(c), nil
+	}
+	return string(result.Value), nil
 }
 
 func (ns *Indexer) deleteTypeByQuery(typeName string, rangeQuery db.IntegerRangeQuery) {
@@ -563,4 +716,6 @@ func (ns *Indexer) DeleteBlocksInRange(fromBlockHeight uint64, toBlockHeight uin
 	ns.deleteTypeByQuery("block", db.IntegerRangeQuery{Field: "no", Min: fromBlockHeight, Max: toBlockHeight})
 	ns.deleteTypeByQuery("tx", db.IntegerRangeQuery{Field: "blockno", Min: fromBlockHeight, Max: toBlockHeight})
 	ns.deleteTypeByQuery("name", db.IntegerRangeQuery{Field: "blockno", Min: fromBlockHeight, Max: toBlockHeight})
+	ns.deleteTypeByQuery("token_transfer", db.IntegerRangeQuery{Field: "blockno", Min: fromBlockHeight, Max: toBlockHeight})
+	ns.deleteTypeByQuery("token", db.IntegerRangeQuery{Field: "blockno", Min: fromBlockHeight, Max: toBlockHeight})
 }

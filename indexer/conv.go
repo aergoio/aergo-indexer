@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"strings"
 	"time"
 
 	"github.com/aergoio/aergo-indexer/indexer/category"
@@ -123,4 +124,83 @@ func (ns *Indexer) ConvNameTx(tx *types.Tx, blockNo uint64) doc.EsName {
 		Address:    address,
 		UpdateTx:   hash,
 	}
+}
+
+func convertBignumJson(in map[string]interface{}) (*big.Int, bool) {
+	bignum, ok := in["_bignum"].(string)
+	if ok {
+		n := new(big.Int)
+		n, ok := n.SetString(bignum, 10)
+		if ok {
+			return n, true
+		}
+	}
+	return nil, false
+}
+
+// ConvContractCreateTx creates document for token creation
+func (ns *Indexer) ConvTokenTx(contractAddress []byte, txDoc doc.EsTx, idx int, args []interface{}) doc.EsTokenTransfer {
+	tokenAddress := ns.encodeAndResolveAccount(contractAddress, txDoc.BlockNo)
+
+	amount := "0"
+	tokenId := ""
+	var amountFloat float32 = 0.0
+
+	switch c := args[2].(type) {
+	case string:
+		tokenId = c
+		amount = "1"
+		amountFloat = 1.0
+	case map[string]interface{}:
+		am, ok := convertBignumJson(c)
+		if ok {
+			amount = am.String()
+			amountFloat = bigIntToFloat(am, 18)
+		}
+	default:
+		fmt.Printf("Failed to parse arg %s\n", args[2])
+	}
+
+	id := fmt.Sprintf("%s-%d", txDoc.Id, idx)
+	return doc.EsTokenTransfer{
+		BaseEsType:   &doc.BaseEsType{id},
+		TxId:         txDoc.GetID(),
+		BlockNo:      txDoc.BlockNo,
+		Timestamp:    txDoc.Timestamp,
+		TokenAddress: tokenAddress,
+		From:         args[0].(string),
+		To:           args[1].(string),
+		Amount:       amount,
+		AmountFloat:  amountFloat,
+		TokenId:      tokenId,
+	}
+}
+
+// ConvContractCreateTx creates document for token creation
+func (ns *Indexer) ConvTokenCreateTx(tx *types.Tx, txDoc doc.EsTx, receipt *types.Receipt) doc.EsToken {
+	address := encodeAccount(receipt.ContractAddress)
+	return doc.EsToken{
+		BaseEsType:  &doc.BaseEsType{address},
+		TxId:        txDoc.GetID(),
+		UpdateBlock: txDoc.BlockNo,
+	}
+}
+
+// MaybeTokenCreation runs a heuristic to determine if tx might be creating a token
+func (ns *Indexer) MaybeTokenCreation(tx *types.Tx) bool {
+	txBody := tx.GetBody()
+	isDeploy := len(txBody.GetRecipient()) == 0 && len(txBody.Payload) > 0
+	if !isDeploy {
+		return false
+	}
+	// We treat the payload (which is part bytecode, part ABI) as text
+	// and check that ALL the ARC1/2 keywords are included
+	payload := string(txBody.GetPayload())
+	keywords := [...]string{"balanceOf", "transfer", "symbol"}
+	for _, keyword := range keywords {
+		if !strings.Contains(payload, keyword) {
+			return false
+		}
+	}
+	return true
 }

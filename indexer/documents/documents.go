@@ -62,6 +62,32 @@ type EsName struct {
 	UpdateTx    string `json:"tx" db:"tx"`
 }
 
+// EsTokenTransfer is a transfer of a token
+type EsTokenTransfer struct {
+	*BaseEsType
+	TxId         string    `json:"tx_id" db:"tx_id"`
+	Timestamp    time.Time `json:"ts" db:"ts"`
+	BlockNo      uint64    `json:"blockno" db:"blockno"`
+	TokenAddress string    `json:"address" db:"address"`
+	From         string    `json:"from" db:"from"`
+	To           string    `json:"to" db:"to"`
+	Amount       string    `json:"amount" db:"amount"`             // string of BigInt
+	AmountFloat  float32   `json:"amount_float" db:"amount_float"` // float for sorting
+	TokenId      string    `json:"token_id" db:"token_id"`
+}
+
+// EsToken is meta data of a token. The id is the contract address.
+type EsToken struct {
+	*BaseEsType
+	TxId        string             `json:"tx_id" db:"tx_id"`
+	UpdateBlock uint64             `json:"blockno" db:"blockno"`
+	Type        category.TokenType `json:"type" db:"type"`
+	Name        string             `json:"name" db:"name"`
+	Symbol      string             `json:"symbol" db:"symbol"`
+	Decimals    uint8              `json:"decimals" db:"decimals"`
+	Supply      string             `json:"supply" db:"supply"`
+}
+
 // EsMappings contains the elasticsearch mappings
 var EsMappings = map[string]string{
 	"tx": `{
@@ -142,6 +168,67 @@ var EsMappings = map[string]string{
 			}
 		}
 	}`,
+	"token_transfer": `{
+		"mappings":{
+			"token_transfer":{
+				"properties":{
+					"tx_id": {
+						"type": "keyword"
+					},
+					"blockno": {
+						"type": "long"
+					},
+					"ts": {
+						"type": "date"
+					},
+					"address": {
+						"type": "keyword"
+					},
+					"token_id": {
+						"type": "keyword"
+					},
+					"from": {
+						"type": "keyword"
+					},
+					"to": {
+						"type": "keyword"
+					},
+					"amount": {
+						"enabled": false
+					},
+					"amount_float": {
+						"type": "float"
+					}
+				}
+			}
+		}
+	}`,
+	"token": `{
+		"mappings":{
+			"token":{
+				"properties":{
+					"tx_id": {
+						"type": "keyword"
+					},
+					"blockno": {
+						"type": "long"
+					},
+					"name": {
+						"type": "keyword"
+					},
+					"symbol": {
+						"type": "keyword"
+					},
+					"decimals": {
+						"type": "short"
+					},
+					"supply": {
+						"enabled": false
+					}
+				}
+			}
+		}
+	}`,
 }
 
 func mapCategoriesToStr(categories []category.TxCategory) []string {
@@ -166,7 +253,7 @@ var SQLSchemas = map[string]string{
 			amount VARCHAR(30) NOT NULL,
 			amount_float FLOAT(23) NOT NULL,
 			type CHAR(1) NOT NULL,
-			category ENUM(` + categories + `),
+			category ENUM(` + categories + `) NOT NULL,
 			PRIMARY KEY (id),
 			INDEX tx_from (` + "`" + `from` + "`" + `(10)),
 			INDEX tx_to (` + "`" + `to` + "`" + `(10)),
@@ -196,5 +283,37 @@ var SQLSchemas = map[string]string{
 			PRIMARY KEY (id),
 			INDEX name_name (name),
 			INDEX name_address (address)
+		);`,
+	"token_transfer": `
+		CREATE TABLE ` + "`" + `%indexName%` + "`" + ` (
+			id VARCHAR(60) NOT NULL UNIQUE,
+			tx_id CHAR(44) NOT NULL,
+			address VARCHAR(52) NOT NULL,
+			token_id VARCHAR(255) NULL,
+			ts DATETIME NOT NULL,
+			blockno INTEGER UNSIGNED NOT NULL,
+			` + "`" + `from` + "`" + ` VARCHAR(52) NOT NULL,
+			` + "`" + `to` + "`" + ` VARCHAR(52),
+			amount VARCHAR(30) NOT NULL,
+			amount_float FLOAT(23) NOT NULL,
+			PRIMARY KEY (id),
+			INDEX tokentx_from (` + "`" + `from` + "`" + `(10)),
+			INDEX tokentx_to (` + "`" + `to` + "`" + `(10)),
+			INDEX tokentx_address (address),
+			INDEX tokentx_blockno (blockno)
+		);`,
+	"token": `
+		CREATE TABLE ` + "`" + `%indexName%` + "`" + ` (
+			id VARCHAR(52) NOT NULL UNIQUE,
+			tx_id CHAR(44) NOT NULL,
+			blockno INTEGER UNSIGNED NOT NULL,
+			type ENUM('ARC1', 'ARC2') NOT NULL,
+			name VARCHAR(12) NOT NULL,
+			symbol VARCHAR(12) NOT NULL,
+			decimals TINYINT NOT NULL,
+			supply VARCHAR(30) NOT NULL,
+			PRIMARY KEY (id),
+			INDEX name_name (name),
+			INDEX name_address (tx_id)
 		);`,
 }
