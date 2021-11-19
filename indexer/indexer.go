@@ -1,6 +1,7 @@
 package indexer
 
 import (
+	"bytes"
 	"context"
 	"encoding/binary"
 	"encoding/json"
@@ -648,6 +649,10 @@ func (ns *Indexer) IndexTxs(
 			})
 			if err == nil {
 				for idx, event := range events.Events {
+					// Check txHash because we cannot filter for it
+					if !bytes.Equal(event.TxHash, tx.Hash) {
+						continue
+					}
 					var args []interface{}
 					json.Unmarshal([]byte(event.JsonArgs), &args)
 					if len(args) < 3 {
