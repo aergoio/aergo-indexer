@@ -43,14 +43,16 @@ type EsBlock struct {
 // EsTx is a transaction stored in the database
 type EsTx struct {
 	*BaseEsType
-	Timestamp   time.Time           `json:"ts" db:"ts"`
-	BlockNo     uint64              `json:"blockno" db:"blockno"`
-	Account     string              `json:"from" db:"from"`
-	Recipient   string              `json:"to" db:"to"`
-	Amount      string              `json:"amount" db:"amount"`             // string of BigInt
-	AmountFloat float32             `json:"amount_float" db:"amount_float"` // float for sorting
-	Type        string              `json:"type" db:"type"`
-	Category    category.TxCategory `json:"category" db:"category"`
+	Timestamp      time.Time           `json:"ts" db:"ts"`
+	BlockNo        uint64              `json:"blockno" db:"blockno"`
+	Account        string              `json:"from" db:"from"`
+	Recipient      string              `json:"to" db:"to"`
+	Amount         string              `json:"amount" db:"amount"`             // string of BigInt
+	AmountFloat    float32             `json:"amount_float" db:"amount_float"` // float for sorting
+	Type           string              `json:"type" db:"type"`
+	Category       category.TxCategory `json:"category" db:"category"`
+	Method         string              `json:"method" db:"method"`
+	TokenTransfers int                 `json:"token_transfers" db:"token_transfers"`
 }
 
 // EsName is a name-address mapping stored in the database
@@ -117,6 +119,12 @@ var EsMappings = map[string]string{
 					},
 					"category": {
 						"type": "keyword"
+					},
+					"method": {
+						"type": "keyword"
+					},
+					"token_transfers": {
+						"type": "long"
 					}
 				}
 			}
@@ -254,6 +262,8 @@ var SQLSchemas = map[string]string{
 			amount_float FLOAT(23) NOT NULL,
 			type CHAR(1) NOT NULL,
 			category ENUM(` + categories + `) NOT NULL,
+			method CHAR(50) NOT NULL,
+			token_transfers INTEGER UNSIGNED NOT NULL,
 			PRIMARY KEY (id),
 			INDEX tx_from (` + "`" + `from` + "`" + `(10)),
 			INDEX tx_to (` + "`" + `to` + "`" + `(10)),
