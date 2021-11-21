@@ -206,9 +206,9 @@ func (ns *Indexer) Start(grpcClient types.AergoRPCServiceClient, reindex bool, e
 		go ns.CheckConsistency()
 	}
 
-	if ns.reindexing && ns.stopAt != -1 {
-		go ns.IndexBlocksInRange(uint64(ns.startFrom), uint64(ns.stopAt))
-	}
+	//if ns.reindexing && ns.stopAt != -1 {
+	//	go ns.IndexBlocksInRange(uint64(ns.startFrom), uint64(ns.stopAt))
+	//}
 
 	err := ns.StartStream()
 	if err != nil {
