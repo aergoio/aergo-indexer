@@ -33,64 +33,67 @@ const (
 var TxCategories = []TxCategory{None, Payload, Call, Governance, System, Staking, Voting, Name, NameCreate, NameUpdate, Enterprise, Conf, Cluster, Deploy, Redeploy}
 
 // DetectTxCategory by performing a cascade of checks with fallbacks
-func DetectTxCategory(tx *types.Tx) TxCategory {
+func DetectTxCategory(tx *types.Tx) (TxCategory, string) {
 	txBody := tx.GetBody()
 	txType := txBody.GetType()
 	txRecipient := string(txBody.GetRecipient())
 	if txType == types.TxType_REDEPLOY {
-		return Redeploy
+		return Redeploy, ""
 	}
 	if txRecipient == "" && len(txBody.Payload) > 0 {
-		return Deploy
+		return Deploy, ""
 	}
 	if txRecipient == "aergo.enterprise" {
 		txCallName, err := transaction.GetCallName(tx)
 		if err == nil {
 			txCallName = strings.ToLower(txCallName)
 			if strings.HasSuffix(txCallName, "cluster") {
-				return Cluster
+				return Cluster, txCallName
 			}
 			if strings.HasSuffix(txCallName, "conf") {
-				return Conf
+				return Conf, txCallName
 			}
+			return Enterprise, txCallName
 		}
-		return Enterprise
+		return Enterprise, ""
 	}
 	if txRecipient == "aergo.name" {
 		txCallName, err := transaction.GetCallName(tx)
 		if err == nil {
 			txCallName = strings.ToLower(txCallName)
 			if strings.HasSuffix(txCallName, "updatename") {
-				return NameUpdate
+				return NameUpdate, txCallName
 			}
 			if strings.HasSuffix(txCallName, "createname") {
-				return NameCreate
+				return NameCreate, txCallName
 			}
+			return Name, txCallName
 		}
-		return Name
+		return Name, ""
 	}
 	if txRecipient == "aergo.system" {
 		txCallName, err := transaction.GetCallName(tx)
 		if err == nil {
 			txCallName = strings.ToLower(txCallName)
 			if strings.HasSuffix(txCallName, "stake") || strings.HasSuffix(txCallName, "unstake") {
-				return Staking
+				return Staking, txCallName
 			}
 			if strings.HasSuffix(txCallName, "vote") || strings.HasSuffix(txCallName, "votedao") || strings.HasSuffix(txCallName, "votebp") || strings.HasSuffix(txCallName, "proposal") {
-				return Voting
+				return Voting, txCallName
 			}
+			return System, txCallName
 		}
-		return System
+		return System, ""
 	}
 	if txType == types.TxType_GOVERNANCE {
-		return Governance
+		return Governance, ""
 	}
 	txCallName, err := transaction.GetCallName(tx)
 	if err == nil && txCallName != "" {
-		return Call
+		return Call, txCallName
 	}
 	if len(txBody.Payload) > 0 {
-		return Payload
+		return Payload, ""
 	}
-	return None
+	return None, ""
 }

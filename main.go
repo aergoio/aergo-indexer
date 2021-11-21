@@ -33,6 +33,7 @@ var (
 	startFrom       int32
 	stopAt          int32
 	idleOnConflict  int32
+	skipEmpty       bool
 
 	logger *log.Logger
 
@@ -44,6 +45,7 @@ func init() {
 	fs := rootCmd.PersistentFlags()
 	fs.BoolVar(&reindexingMode, "reindex", false, "reindex blocks from genesis and swap index after catching up")
 	fs.BoolVar(&exitOnComplete, "exit-on-complete", false, "exit when reindexing sync completes for the first time")
+	fs.BoolVar(&skipEmpty, "skip-empty", false, "skip indexing empty blocks")
 	fs.StringVarP(&host, "host", "H", "localhost", "host address of aergo server")
 	fs.Int32VarP(&port, "port", "p", 7845, "port number of aergo server")
 	fs.StringVarP(&aergoAddress, "aergo", "A", "", "host and port of aergo server. Alternative to setting host and port separately.")
@@ -73,7 +75,7 @@ func rootRun(cmd *cobra.Command, args []string) {
 	}
 	client = waitForClient(getServerAddress())
 
-	err = indexer.Start(client, reindexingMode, exitOnComplete, int64(startFrom), int64(stopAt), idleOnConflict)
+	err = indexer.Start(client, reindexingMode, exitOnComplete, int64(startFrom), int64(stopAt), idleOnConflict, skipEmpty)
 	if err != nil {
 		logger.Warn().Err(err).Str("dbURL", dbURL).Msg("Could not start indexer")
 		return

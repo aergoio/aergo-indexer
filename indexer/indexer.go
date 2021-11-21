@@ -40,6 +40,7 @@ type Indexer struct {
 	stopAt          int64
 	idleOnConflict  int32
 	esLock          *distributedLock.Lock
+	skipEmpty       bool
 }
 
 // NewIndexer creates new Indexer instance
@@ -154,7 +155,7 @@ func (ns *Indexer) OnSyncComplete() {
 }
 
 // Start setups the indexer
-func (ns *Indexer) Start(grpcClient types.AergoRPCServiceClient, reindex bool, exitOnComplete bool, startFrom int64, stopAt int64, idleOnConflict int32) error {
+func (ns *Indexer) Start(grpcClient types.AergoRPCServiceClient, reindex bool, exitOnComplete bool, startFrom int64, stopAt int64, idleOnConflict int32, skipEmpty bool) error {
 	ns.grpcClient = grpcClient
 
 	if reindex {
@@ -168,6 +169,11 @@ func (ns *Indexer) Start(grpcClient types.AergoRPCServiceClient, reindex bool, e
 	ns.CreateIndexIfNotExists("name")
 	ns.CreateIndexIfNotExists("token")
 	ns.CreateIndexIfNotExists("token_transfer")
+
+	ns.skipEmpty = skipEmpty
+	if skipEmpty {
+		ns.log.Info().Msg("Going to skip empty blocks")
+	}
 
 	ns.startFrom = startFrom
 	ns.stopAt = stopAt
@@ -198,6 +204,10 @@ func (ns *Indexer) Start(grpcClient types.AergoRPCServiceClient, reindex bool, e
 
 	if !ns.reindexing {
 		go ns.CheckConsistency()
+	}
+
+	if ns.reindexing && ns.stopAt != -1 {
+		go ns.IndexBlocksInRange(uint64(ns.startFrom), uint64(ns.stopAt))
 	}
 
 	err := ns.StartStream()
@@ -422,6 +432,9 @@ func (ns *Indexer) IndexBlock(block *types.Block) {
 	}
 	ctx := context.Background()
 	blockDocument := ns.ConvBlock(block)
+	if ns.skipEmpty && blockDocument.TxCount < 1 {
+		return
+	}
 	_, err := ns.db.Insert(blockDocument, db.UpdateParams{IndexName: ns.indexNamePrefix + "block", TypeName: "block"})
 	if err != nil {
 		if ns.db.IsConflict(err) {
@@ -552,10 +565,14 @@ func (ns *Indexer) IndexBlocksInRange(fromBlockHeight uint64, toBlockHeight uint
 				ns.log.Warn().Uint64("blockHeight", blockHeight).Err(err).Msg("Failed to get block")
 				continue
 			}
+			d := ns.ConvBlock(block)
 			if len(block.Body.Txs) > 0 {
 				ns.IndexTxs(block, block.Body.Txs, txChannel, nameChannel, tokenChannel, tokenTxChannel)
+			} else {
+				if ns.skipEmpty {
+					continue
+				}
 			}
-			d := ns.ConvBlock(block)
 			select {
 			case channel <- d:
 			case <-ctx.Done():
@@ -648,6 +665,7 @@ func (ns *Indexer) IndexTxs(
 				Blockto:         d.BlockNo,
 			})
 			if err == nil {
+				tokenTransfers := 0
 				for idx, event := range events.Events {
 					// Check txHash because we cannot filter for it
 					if !bytes.Equal(event.TxHash, tx.Hash) {
@@ -660,7 +678,9 @@ func (ns *Indexer) IndexTxs(
 					}
 					tokenTx := ns.ConvTokenTx(contractAddress, d, idx, args)
 					tokenTxChannel <- tokenTx
+					tokenTransfers = tokenTransfers + 1
 				}
+				d.TokenTransfers = tokenTransfers
 			}
 		}
 
