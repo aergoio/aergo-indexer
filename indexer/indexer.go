@@ -565,7 +565,6 @@ func (ns *Indexer) IndexBlocksInRange(fromBlockHeight uint64, toBlockHeight uint
 				ns.log.Warn().Uint64("blockHeight", blockHeight).Err(err).Msg("Failed to get block")
 				continue
 			}
-			d := ns.ConvBlock(block)
 			if len(block.Body.Txs) > 0 {
 				ns.IndexTxs(block, block.Body.Txs, txChannel, nameChannel, tokenChannel, tokenTxChannel)
 			} else {
@@ -573,6 +572,7 @@ func (ns *Indexer) IndexBlocksInRange(fromBlockHeight uint64, toBlockHeight uint
 					continue
 				}
 			}
+			d := ns.ConvBlock(block)
 			select {
 			case channel <- d:
 			case <-ctx.Done():
