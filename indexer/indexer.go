@@ -657,7 +657,8 @@ func (ns *Indexer) IndexTxs(
 		}
 
 		// Process token transfer events
-		if tx.GetBody().GetType() == types.TxType_CALL || createdToken {
+		isContractCall := tx.GetBody().GetType() == types.TxType_CALL || tx.GetBody().GetType() == types.TxType_FEEDELEGATION
+		if isContractCall || createdToken {
 			events, err := ns.grpcClient.ListEvents(context.Background(), &types.FilterInfo{
 				ContractAddress: contractAddress,
 				EventName:       "transfer",
